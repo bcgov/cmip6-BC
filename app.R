@@ -1,3 +1,7 @@
+## R Shiny app for visualization of CMIP6 global climate model simulations for BC and subregions
+## author: Colin Mahony colin.mahony@gov.bc.ca
+
+
 library(shiny)
 library(RColorBrewer)
 library(DT)
@@ -5,7 +9,6 @@ library(scales)
 library(shinydashboard)
 library(markdown)
 
-# setwd("C:\\Colin\\Projects\\2020_ScenarioGuidance\\EnsembleApp")
 
 # ----------------------------------------------
 # Load the input data
@@ -15,22 +18,21 @@ modelMetadata <- read.csv("data/ModelList.csv")
 
 dem.pts <- read.csv("data/dem_cmip6eval.csv")
 
-era5.ts <- read.csv("data/era5.ts.csv")
-obs.ts <- read.csv("data/obs.ts.csv")
+## time series for observations
+obs.ts <- read.csv("data/obs.ts.csv") #gridded station observations
+era5.ts <- read.csv("data/era5.ts.csv") #ERA5 reanalysis
 
-# BC mean climate
-obs.ts.mean <- aggregate(obs.ts, by=list(obs.ts$Year), FUN = mean, na.rm=T)[,-1]
-era5.ts.mean <- aggregate(era5.ts, by=list(era5.ts$Year), FUN = mean, na.rm=T)[,-1]
-variables <- names(obs.ts.mean)[-1]
+# list of variables
+variables <- names(obs.ts)[-1]
 
+# Define ecoprovinces (subregions of BC) and climate elements
 ecoprovs <- c("BC", sort(as.character(unique(dem.pts$id2))))
 ecoprov.names <- c("British Columbia", "Boreal Plains", "Central Interior", "Coast and Mountains", "Georgia Depression", "Northern Boreal Mountains", "Sub-Boreal Interior", "Southern Interior Mountains", "Southern Interior", "Taiga Plains")
 elements <- c("Tave", "Tmax", "Tmin", "PPT")
 element.names <- c("Mean temperature" , "Mean daily maximum temperature (Tmax)", "Mean daily minimum temperature (Tmin)", "Precipitation")
 element.names.units <- c(bquote(Mean~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(maximum)~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(minimum)~temperature~"("*degree*C*")"), "Precipitation (mm)")
 
-ecoprov="BC"
-variable="Tmin03"
+# extract the global climate models and scenarios from an arbitrary file. 
 files <- list.files("data/", pattern="^ensmin.BC")
 template <- read.csv(paste("data/", files[1], sep=""), stringsAsFactors = F)
 gcms <- names(template)[-c(1:2, length(names(template)))]
@@ -38,6 +40,7 @@ scenarios <- unique(template[,1])
 scenario.names <- c("Historical simulations", "SSP1-2.6", "SSP2-4.5", "SSP3-7.0", "SSP5-8.5")
 gcm.names <- as.character(modelMetadata[,1])
 
+# Other definitions
 monthdays <- c(31, 28.25, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 monthcodes <- c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12")
 seasonmonth.mat <- matrix(monthcodes[c(12, 1:11)],4, byrow=T)
@@ -90,6 +93,7 @@ ui <- fluidPage(
                           
                           checkboxInput("era5", label = "Show ERA5 reanalysis", value = F),
                           
+                          # ELEMENT NAMES. THIS IS WHERE THE DERIVED VARIABLES WILL BE ADDED TO THE LIST
                           selectInput("element1",
                                       label = "Choose the climate element",
                                       choices = as.list(element.names),
@@ -105,6 +109,7 @@ ui <- fluidPage(
                           conditionalPanel(
                             condition = "input.compare == true",
                             
+                            # ELEMENT NAMES. THIS IS WHERE THE DERIVED VARIABLES WILL BE ADDED TO THE LIST
                             selectInput("element2",
                                         label = "Choose a climate element for comparison",
                                         choices = as.list(element.names),
@@ -199,7 +204,7 @@ server <- function(input, output) {
   
   output$timeSeries <- renderPlot({
     
-    # user specification
+    # user specificationS
     ecoprov <- ecoprovs[which(ecoprov.names==input$ecoprov.name)]
     yeartime1 <- yeartimes[which(yeartime.names==input$yeartime1)]
     yeartime2 <- if(input$compare==T) yeartimes[which(yeartime.names==input$yeartime2)] else yeartimes[which(yeartime.names==input$yeartime1)]
@@ -229,7 +234,8 @@ server <- function(input, output) {
       names(era5.ts.mean) <- c(names(era5.ts.mean)[1:37], paste("Tave", monthcodes, sep=""))
     }
     
-    alldata <- vector() # a vector of all data on the plot for setting the ylim
+    ## Assemble the data that will be used in the plot
+    alldata <- vector() # a vector of all data on the plot for setting the ylim (y axis range)
     num <- 1
     for(num in nums){
       
@@ -253,6 +259,7 @@ server <- function(input, output) {
       # ensstat <- ensstats[1]
       for(ensstat in ensstats[c(3,1,2)]){ #need to reorder the enstats so that mean comes first, for bias correction
         # scenario <- scenarios[1]
+        ## Note: rather than reading in a single large data file, this app stores data in many (~2000) small files, and reads them in on demand by user input
         data <- read.csv(paste("data/", paste(ensstat, ecoprov, get(paste("variable",num, sep="")), "csv", sep="."), sep=""))
         temp.historical <- data[which(data[,1]=="historical"),-1]
         for(scenario in scenarios1){
@@ -323,7 +330,7 @@ server <- function(input, output) {
         }
       }
       
-      if(input$compile==T) gcms1 <- "compile"
+      if(input$compile==T) gcms1 <- "compile" #this prevents the plotting of individual GCM projections and plots a single envelope for the ensemble as a whole. 
       for(gcm in gcms1){
         # scenario <- scenarios1[1]
         for(scenario in scenarios1[order(c(1,4,5,3,2)[which(scenarios%in%scenarios1)])]){

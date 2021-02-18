@@ -34,4 +34,6 @@ CMIP6 data downloaded and subsetted by Tongli Wang, Associate Professor at the U
 
 **Regional averages**--There is essentially no downscaling in this app. All climate model data were bilinearly interpolated to a common 0.5^o grid derived from the 025^o ERA5 grid (see figure below). Plot values are the average of the grid points within the boundaries of BC or the user-selected ecoprovince. 
 
+### Acknowledgements
 
+We acknowledge the World Climate Research Programme, which, through its Working Group on Coupled Modelling, coordinated and promoted CMIP6. We thank the climate modeling groups for producing and making available their model output, the Earth System Grid Federation (ESGF) for archiving the data and providing access, and the multiple funding agencies who support CMIP6 and ESGF. We also thank the European Centre for Medium-Range Weather Forecasts (ECMWF) for providing the ERA5 reanalysis via the Copernicus Climate Change Service. 

@@ -18,12 +18,12 @@ modelMetadata <- read.csv("data/ModelList.csv")
 
 dem.pts <- read.csv("data/dem_cmip6eval.csv")
 
-## time series for observations
-obs.ts <- read.csv("data/obs.ts.csv") #gridded station observations
-era5.ts <- read.csv("data/era5.ts.csv") #ERA5 reanalysis
+# ## time series for observations
+# obs.ts <- read.csv("data/obs.ts.csv") #gridded station observations
+# era5.ts <- read.csv("data/era5.ts.csv") #ERA5 reanalysis
 
 # list of variables
-variables <- names(obs.ts)[-1]
+# variables <- names(obs.ts)[-1]
 
 # Define ecoprovinces (subregions of BC) and climate elements
 ecoprovs <- c("BC", sort(as.character(unique(dem.pts$id2))))
@@ -31,6 +31,10 @@ ecoprov.names <- c("British Columbia", "Boreal Plains", "Central Interior", "Coa
 elements <- c("Tave", "Tmax", "Tmin", "PPT")
 element.names <- c("Mean temperature" , "Mean daily maximum temperature (Tmax)", "Mean daily minimum temperature (Tmin)", "Precipitation")
 element.names.units <- c(bquote(Mean~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(maximum)~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(minimum)~temperature~"("*degree*C*")"), "Precipitation (mm)")
+variable.names <- read.csv("data/Variables_ClimateBC.csv")
+
+funs <- c("bias", "sd")
+fun.names <- c("Bias in", "Standard deviation of")
 
 # extract the global climate models and scenarios from an arbitrary file. 
 files <- list.files("data/", pattern="^ensmin.BC")
@@ -78,7 +82,7 @@ ui <- fluidPage(
                           
                           checkboxInput("compile", label = "Compile into custom ensemble", value = FALSE),
                           
-                          checkboxInput("biascorrect", label = "Bias correction (match 1951-80 model climate to observations)", value = FALSE),
+                          checkboxInput("biascorrect", label = "Bias correction (match 1961-80 model climate to observations)", value = FALSE),
                           
                           checkboxGroupInput("scenarios1", "Choose emissions scenarios",
                                              choiceNames = scenario.names[-1],
@@ -89,7 +93,7 @@ ui <- fluidPage(
                           
                           checkboxInput("showmean", label = "Show mean of projections", value = FALSE),
                           
-                          checkboxInput("refline", label = "Show 1951-1980 baseline for models", value = T),
+                          checkboxInput("refline", label = "Show 1961-1990 baseline for models", value = T),
                           
                           checkboxInput("era5", label = "Show ERA5 reanalysis", value = F),
                           
@@ -153,6 +157,90 @@ ui <- fluidPage(
                       )
              ),
              
+             tabPanel("bias", 
+                      sidebarLayout(
+                        sidebarPanel(
+                          helpText("compare bias and variance among models"),
+                          
+                          tags$head(tags$script('$(document).on("shiny:connected", function(e) {
+                            Shiny.onInputChange("innerWidth", window.innerWidth);
+                            });
+                            $(window).resize(function(e) {
+                            Shiny.onInputChange("innerWidth", window.innerWidth);
+                            });
+                            ')),
+                          
+                          checkboxInput("ClimateBC", label = "Reduce to the ClimateBC ensemble", value = FALSE),
+                          
+                          radioButtons("xfun",
+                                       label = "choose x-axis type",
+                                       choices = list("bias" = 1, "st. dev." = 2),
+                                       selected = 1),
+                          
+                          radioButtons("yfun",
+                                       label = "Choose y-axis type",
+                                       choices = list("bias" = 1, "st. dev." = 2),
+                                       selected = 2),
+                          
+                          selectInput("element3",
+                                      label = "Choose the climate element",
+                                      choices = as.list(element.names),
+                                      selected = element.names[1]),
+                          
+                          selectInput("yeartime3",
+                                      label = "Choose the month/season",
+                                      choices = as.list(yeartime.names),
+                                      selected = yeartime.names[3]),
+                          
+                          checkboxInput("compare2", label = "Compare two variables", value = F),
+                          
+                          conditionalPanel(
+                            condition = "input.compare2 == true",
+                            
+                            # ELEMENT NAMES. THIS IS WHERE THE DERIVED VARIABLES WILL BE ADDED TO THE LIST
+                            selectInput("element4",
+                                        label = "Choose a climate element for comparison",
+                                        choices = as.list(element.names),
+                                        selected = element.names[1]),
+                            
+                            selectInput("yeartime4",
+                                        label = "Choose a month/season for comparison",
+                                        choices = as.list(yeartime.names),
+                                        selected = yeartime.names[1]),
+                          ),
+                          
+                          selectInput("ecoprov.name.II",
+                                      label = "Choose an ecoprovince",
+                                      choices = as.list(ecoprov.names),
+                                      selected = ecoprov.names[9]),
+                          
+                          img(src = "Ecoprovinces_Title.png", height = 1861*1/5, width = 1993*1/5)
+                        ),    
+                        
+                        mainPanel(
+                          
+                          plotOutput(outputId = "scatterPlot")
+                          
+                        )
+                      ),
+                      column(width = 12,
+                             style = "background-color:#003366; border-top:2px solid #fcba19;",
+                             
+                             tags$footer(class="footer",
+                                         tags$div(class="container", style="display:flex; justify-content:center; flex-direction:column; text-align:center; height:46px;",
+                                                  tags$ul(style="display:flex; flex-direction:row; flex-wrap:wrap; margin:0; list-style:none; align-items:center; height:100%;",
+                                                          tags$li(a(href="https://www2.gov.bc.ca/gov/content/home", "Home", style="font-size:1em; font-weight:normal; color:white; padding-left:5px; padding-right:5px; border-right:1px solid #4b5e7e;")),
+                                                          tags$li(a(href="https://www2.gov.bc.ca/gov/content/home/disclaimer", "Disclaimer", style="font-size:1em; font-weight:normal; color:white; padding-left:5px; padding-right:5px; border-right:1px solid #4b5e7e;")),
+                                                          tags$li(a(href="https://www2.gov.bc.ca/gov/content/home/privacy", "Privacy", style="font-size:1em; font-weight:normal; color:white; padding-left:5px; padding-right:5px; border-right:1px solid #4b5e7e;")),
+                                                          tags$li(a(href="https://www2.gov.bc.ca/gov/content/home/accessibility", "Accessibility", style="font-size:1em; font-weight:normal; color:white; padding-left:5px; padding-right:5px; border-right:1px solid #4b5e7e;")),
+                                                          tags$li(a(href="https://www2.gov.bc.ca/gov/content/home/copyright", "Copyright", style="font-size:1em; font-weight:normal; color:white; padding-left:5px; padding-right:5px; border-right:1px solid #4b5e7e;")),
+                                                          tags$li(a(href="https://www2.gov.bc.ca/StaticWebResources/static/gov3/html/contact-us.html", "Contact", style="font-size:1em; font-weight:normal; color:white; padding-left:5px; padding-right:5px; border-right:1px solid #4b5e7e;"))
+                                                  )
+                                         )
+                             )
+                      )
+             ),
+             
              tabPanel("About",
                       
                       includeMarkdown("about.Rmd"),
@@ -176,8 +264,8 @@ ui <- fluidPage(
                              )
                       )
              ),
-
-                          tabPanel("Model Info",
+             
+             tabPanel("Model Info",
                       DT::dataTableOutput("table"),
                       column(width = 12,
                              style = "background-color:#003366; border-top:2px solid #fcba19;",
@@ -195,12 +283,92 @@ ui <- fluidPage(
                                          )
                              )
                       )
-                      )
              )
+  )
 )
 
 # Define server logic ----
 server <- function(input, output) {
+  
+  output$scatterPlot <- renderPlot({
+
+    ecoprov <- ecoprovs[1]
+    yeartime1 <- yeartimes[1]
+    yeartime2 <- yeartimes[3]
+    element1 <- elements[1]
+    element2 <- elements[2]
+    xfun <- 1
+    yfun <- 2
+    
+    ecoprov <- ecoprovs[which(ecoprov.names==input$ecoprov.name.II)]
+    yeartime1 <- yeartimes[which(yeartime.names==input$yeartime3)]
+    yeartime2 <- if(input$compare==T) yeartimes[which(yeartime.names==input$yeartime4)] else yeartimes[which(yeartime.names==input$yeartime3)]
+    element1 <- elements[which(element.names==input$element3)]
+    element2 <- if(input$compare==T) elements[which(element.names==input$element4)] else elements[which(element.names==input$element3)]
+    xfun <- input$xfun
+    yfun <- input$yfun
+    
+    variable1 <- paste(element1, yeartime1, sep= if(yeartime1%in%seasons) "_" else "")
+    variable2 <- paste(element2, yeartime2, sep= if(yeartime2%in%seasons) "_" else "")
+
+    data.mean <- read.csv(paste("data/summary.mean", ecoprov, "csv", sep="."), stringsAsFactors = F)
+    data.sd <- read.csv(paste("data/summary.sd", ecoprov, "csv", sep="."), stringsAsFactors = F)
+    data.sd[,grep("PPT", names(data.sd))] <- data.sd[,grep("PPT", names(data.sd))]/data.mean[,grep("PPT", names(data.mean))] #coefficient of variation for precipitation
+    data.bias <- data.mean
+    data.bias[,-c(1:2)] <- sweep(data.mean[,-c(1:2)], MARGIN=2, STATS=as.vector(unlist(data.mean[1,-c(1:2)])), "-")
+    data.bias[,grep("PPT", names(data.bias))] <- sweep(data.mean[,grep("PPT", names(data.bias))], MARGIN=2, STATS=as.vector(unlist(data.mean[1,grep("PPT", names(data.bias))])), "/") #express bias as relative for precipitation
+    
+    variables <- names(data.mean)[-c(1:2)]
+    
+    x <- get(paste("data", funs[xfun], sep="."))[, which(variables==variable1)]
+    y <- get(paste("data", funs[yfun], sep="."))[, which(variables==variable2)]
+
+    # xlim=if(variable.type1=="ratio") range(x) else if(min(x)<0) range(x) else c(0, max(x))
+    # ylim=if(variable.type2=="ratio") range(y) else if(min(y)<0) range(y) else c(0, max(y))
+    xlim=range(x)*c(if(min(x)<0) 1.1 else 0.9, if(max(x)>0) 1.1 else 0.9)
+    ylim=range(y)*c(if(min(y)<0) 1.1 else 0.9, if(max(y)>0) 1.1 else 0.9)
+
+    par(mar=c(3,4,0,1), mgp=c(1.25, 0.25,0), cex=1.5)
+    plot(x,y,col="white", tck=0, xaxt="n", yaxt="n", xlim=xlim, ylim=ylim, ylab="",
+         xlab=paste(fun.names[xfun], variable.names$Variable[which(variable.names$Code==variable1)]),
+    )
+    par(mgp=c(2.5,0.25, 0))
+    title(ylab=paste(fun.names[yfun], variable.names$Variable[which(variable.names$Code==variable2)]))
+    # lines(if(variable.type1=="ratio") c(1,1) else c(0,0), c(-99,99), lty=2, col="gray")
+    # lines(c(-99,99), if(variable.type2=="ratio") c(1,1) else c(0,0), lty=2, col="gray")
+
+    gcms <- unique(data.mean$gcm[!is.na(data.mean$run)])
+
+    mods <- substr(gcms, 1, 3)
+    mods[which(mods=="CNR")] <- paste("MIR", c("c", "e"), sep="")
+    mods[which(mods=="MIR")] <- paste("MIR", c("e", "6"), sep="")
+    mods[which(mods=="MPI")] <- paste("MPI", c("h", "l"), sep="")
+
+    colors = grDevices::colors()[grep('gr(a|e)y', grDevices::colors(), invert = T)][-1]
+    set.seed(2)
+    ColScheme <- c(brewer.pal(n=12, "Paired"),sample(colors,length(gcms)-12))
+    ColScheme[11] <- "blue"
+
+    for(gcm in gcms){
+      i=which(gcms==gcm)
+      s=which(data.mean$gcm==gcm)
+      points(x[s],y[s], pch=21, bg=ColScheme[i], cex=1)
+      points(mean(x[s]),mean(y[s]), pch=21, bg=ColScheme[i], cex=4)
+      text(mean(x[s]),mean(y[s]), mods[i], cex=0.7, font=2)
+    }
+
+    if(element1=="PPT"){
+      axis(1, at=seq(-99,99,0.1), labels=paste(round(seq(-99,99,0.1)*100-100), "%", sep=""), tck=0)
+    } else axis(1, at=seq(round(range(x)[1]-1), round(range(x)[2]+1), round(diff(range(x))/7, if(diff(range(x))<3.5) 1 else 0)), labels=seq(round(range(x)[1]-1),round(range(x)[2]+1), round(diff(range(x))/7, if(diff(range(x))<3.5) 1 else 0)), tck=0)
+    if(element2=="PPT"){
+      axis(2, at=seq(-99,99,0.1), labels=paste(round(seq(-99,99,0.1)*100-100), "%", sep=""), las=2, tck=0)
+    } else axis(2, at=seq(round(range(y)[1]-1), round(range(y)[2]+1), round(diff(range(y))/7, if(diff(range(y))<3.5) 1 else 0)), labels=seq(round(range(y)[1]-1),round(range(y)[2]+1), round(diff(range(y))/7, if(diff(range(y))<3.5) 1 else 0)), las=2, tck=0)
+
+    # legend("bottomleft", legend = c("2001-2019", "2011-2019"), title = "Observed change", pch=c(16, 1), pt.cex=2, col="red", bty="n")
+
+  },
+  height=reactive(ifelse(!is.null(input$innerWidth),input$innerWidth*0.4,0))
+  )
   
   output$timeSeries <- renderPlot({
     
@@ -216,24 +384,6 @@ server <- function(input, output) {
     scenarios1 <- c("historical", input$scenarios1)
     nums <- if(input$compare==T) c(1,2) else c(1)
     
-    # BC/ecoprovince mean observed climate
-    if(ecoprov=="BC") s <- 1:dim(obs.ts)[1] else {
-      for(i in 1:length(unique(obs.ts$Year))){ if(i==1) s <- which(dem.pts$id2==ecoprov) else s <- c(s,which(dem.pts$id2==ecoprov)+length(dem.pts$id2)*(i-1))  }
-    }
-    obs.ts.mean <- aggregate(obs.ts[s,], by=list(obs.ts$Year[s]), FUN = mean, na.rm=T)[,-1]
-    obs.ts.mean <- cbind(obs.ts.mean, (obs.ts.mean[,2:13]+obs.ts.mean[,14:25])/2)
-    names(obs.ts.mean) <- c(names(obs.ts.mean)[1:37], paste("Tave", monthcodes, sep=""))
-    
-    # BC/ecoprovince mean ERA5 climate
-    if(input$era5==T){
-      if(ecoprov=="BC") s <- 1:dim(era5.ts)[1] else {
-        for(i in 1:length(unique(era5.ts$Year))){ if(i==1) s <- which(dem.pts$id2==ecoprov) else s <- c(s,which(dem.pts$id2==ecoprov)+length(dem.pts$id2)*(i-1))  }
-      }
-      era5.ts.mean <- aggregate(era5.ts[s,], by=list(era5.ts$Year[s]), FUN = mean, na.rm=T)[,-1]
-      era5.ts.mean <- cbind(era5.ts.mean, (era5.ts.mean[,2:13]+era5.ts.mean[,14:25])/2)
-      names(era5.ts.mean) <- c(names(era5.ts.mean)[1:37], paste("Tave", monthcodes, sep=""))
-    }
-    
     ## Assemble the data that will be used in the plot
     alldata <- vector() # a vector of all data on the plot for setting the ylim (y axis range)
     num <- 1
@@ -243,16 +393,12 @@ server <- function(input, output) {
       yeartime <- get(paste("yeartime",num,sep=""))
       element <- get(paste("element",num,sep=""))
       variable <- get(paste("variable",num,sep=""))
+      
+      obs.ts.mean <- read.csv(paste("data/ts.obs.mean.", ecoprov, ".csv", sep=""))
+      
       x1 <- unique(obs.ts.mean[,1])
-      if(yeartime%in%seasons){
-        seasonmonths <- seasonmonth.mat[which(seasons==yeartime),]
-        y1 <- obs.ts.mean[,which(names(obs.ts.mean)%in%paste(element,seasonmonths, sep=""))]
-        if(yeartime=="wt") y1[2:dim(y1)[1],grep(12, names(y1))] <- y1[1:(dim(y1)[1]-1),grep(12, names(y1))] #advance december by one year (doesn't account for first year in series, but not a big deal)
-        y1 <- apply(y1, 1, if(element=="PPT") sum else mean)
-      } else {
-        y1 <- obs.ts.mean[,which(names(obs.ts.mean)==variable)]
-      }
-      baseline.obs <- mean(y1[which(x1%in%1951:1980)])
+      y1 <- obs.ts.mean[,which(names(obs.ts.mean)==variable)]
+      baseline.obs <- mean(y1[which(x1%in%1961:1990)])
       recent.obs <- mean(y1[(length(y1)-10):(length(y1))])
       
       #data for GCMs
@@ -267,7 +413,7 @@ server <- function(input, output) {
           if(scenario != "historical"){
             temp <- rbind(temp.historical[dim(temp.historical)[1],match(names(temp), names(temp.historical))], temp) # add last year of historical runs
           }
-          if(scenario == "historical") if(ensstat=="ensmean") baseline.mod <- apply(temp[which(temp[,1]%in%1951:1980),-1], 2, mean)
+          if(scenario == "historical") if(ensstat=="ensmean") baseline.mod <- apply(temp[which(temp[,1]%in%1961:1990),-1], 2, mean)
           
           alldata <- c(alldata, as.vector(unlist(temp[-1]))) #store values in a big vector for maintaining a constant ylim
           # optional bias correction
@@ -305,29 +451,15 @@ server <- function(input, output) {
       
       # data for observations
       x1 <- unique(obs.ts.mean[,1])
-      x2 <- unique(era5.ts.mean[,1])
-      if(yeartime%in%seasons){
-        seasonmonths <- seasonmonth.mat[which(seasons==yeartime),]
-        y1 <- obs.ts.mean[,which(names(obs.ts.mean)%in%paste(element,seasonmonths, sep=""))]
-        if(yeartime=="wt") y1[2:dim(y1)[1],grep(12, names(y1))] <- y1[1:(dim(y1)[1]-1),grep(12, names(y1))] #advance december by one year (doesn't account for first year in series, but not a big deal)
-        y1 <- apply(y1, 1, if(element=="PPT") sum else mean)
-      } else {
-        y1 <- obs.ts.mean[,which(names(obs.ts.mean)==variable)]
-      }
-      baseline.obs <- mean(y1[which(x1%in%1951:1980)])
+      y1 <- obs.ts.mean[,which(names(obs.ts.mean)==variable)]
+      baseline.obs <- mean(y1[which(x1%in%1961:1990)])
       recent.obs <- mean(y1[(length(y1)-10):(length(y1))])
       
       # data for era5
       if(input$era5==T){
+        era5.ts.mean <- read.csv(paste("data/ts.era5.mean.", ecoprov, ".csv", sep=""))
         x2 <- unique(era5.ts.mean[,1])
-        if(yeartime%in%seasons){
-          seasonmonths <- seasonmonth.mat[which(seasons==yeartime),]
-          y2 <- era5.ts.mean[,which(names(era5.ts.mean)%in%paste(element,seasonmonths, sep=""))]
-          if(yeartime=="wt") y2[2:dim(y2)[1],grep(12, names(y2))] <- y2[1:(dim(y2)[1]-1),grep(12, names(y2))] #advance december by one year (doesn't account for first year in series, but not a big deal)
-          y2 <- apply(y2, 1, if(element=="PPT") sum else mean)
-        } else {
-          y2 <- era5.ts.mean[,which(names(era5.ts.mean)==variable)]
-        }
+        y2 <- era5.ts.mean[,which(names(era5.ts.mean)==variable)]
       }
       
       if(input$compile==T) gcms1 <- "compile" #this prevents the plotting of individual GCM projections and plots a single envelope for the ensemble as a whole. 
@@ -353,8 +485,8 @@ server <- function(input, output) {
           
           if(input$refline==T){
             ref.temp <- mean(ensmean.historical[101:130])
-            lines(1951:1980, rep(ref.temp, 30), lwd=2)
-            lines(c(1980,2100), rep(ref.temp, 2), lty=2)
+            lines(1961:1990, rep(ref.temp, 30), lwd=2)
+            lines(c(1990,2100), rep(ref.temp, 2), lty=2)
           }
           
           if(scenario != "historical"){
@@ -398,8 +530,8 @@ server <- function(input, output) {
         change <- round(recent.obs-baseline.obs,1)
         text(2018,recent.obs, if(change>0) paste("+",change,"C", sep="") else paste(change,"C", sep=""), col=obs.color, pos=4, font=2, cex=1)
       }
-      lines(1951:1980, rep(baseline.obs, 30), lwd=1, col=obs.color)
-      lines(c(1980,2019), rep(baseline.obs, 2), lty=2, col=obs.color)
+      lines(1961:1990, rep(baseline.obs, 30), lwd=1, col=obs.color)
+      lines(c(1990,2019), rep(baseline.obs, 2), lty=2, col=obs.color)
       
       era5.color <- "darkorange"
       if(input$era5==T){
@@ -425,9 +557,10 @@ server <- function(input, output) {
     }
     box()
   },
-  height=reactive(ifelse(!is.null(input$innerWidth),input$innerWidth*0.4,0))
+  height=reactive(ifelse(!is.null(input$innerWidth),input$innerWidth*0.5,0))
   )
   
+
   output$table <- DT::renderDataTable({
     DT::datatable(modelMetadata, 
                   options = list(pageLength = dim(modelMetadata)[1]), 

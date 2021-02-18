@@ -292,36 +292,34 @@ server <- function(input, output) {
   
   output$scatterPlot <- renderPlot({
 
-    ecoprov <- ecoprovs[1]
-    yeartime1 <- yeartimes[1]
-    yeartime2 <- yeartimes[3]
-    element1 <- elements[1]
-    element2 <- elements[2]
-    xfun <- 1
-    yfun <- 2
-    
+    # ecoprov <- ecoprovs[1]
+    # yeartime1 <- yeartimes[3]
+    # yeartime2 <- yeartimes[3]
+    # element1 <- elements[1]
+    # element2 <- elements[1]
+    # xfun <- 1
+    # yfun <- 2
+ 
     ecoprov <- ecoprovs[which(ecoprov.names==input$ecoprov.name.II)]
     yeartime1 <- yeartimes[which(yeartime.names==input$yeartime3)]
-    yeartime2 <- if(input$compare==T) yeartimes[which(yeartime.names==input$yeartime4)] else yeartimes[which(yeartime.names==input$yeartime3)]
+    yeartime2 <- if(input$compare2==T) yeartimes[which(yeartime.names==input$yeartime4)] else yeartimes[which(yeartime.names==input$yeartime3)]
     element1 <- elements[which(element.names==input$element3)]
-    element2 <- if(input$compare==T) elements[which(element.names==input$element4)] else elements[which(element.names==input$element3)]
-    xfun <- input$xfun
-    yfun <- input$yfun
+    element2 <- if(input$compare2==T) elements[which(element.names==input$element4)] else elements[which(element.names==input$element3)]
+    xfun <- as.numeric(input$xfun)
+    yfun <- as.numeric(input$yfun)
     
     variable1 <- paste(element1, yeartime1, sep= if(yeartime1%in%seasons) "_" else "")
     variable2 <- paste(element2, yeartime2, sep= if(yeartime2%in%seasons) "_" else "")
 
     data.mean <- read.csv(paste("data/summary.mean", ecoprov, "csv", sep="."), stringsAsFactors = F)
     data.sd <- read.csv(paste("data/summary.sd", ecoprov, "csv", sep="."), stringsAsFactors = F)
-    data.sd[,grep("PPT", names(data.sd))] <- data.sd[,grep("PPT", names(data.sd))]/data.mean[,grep("PPT", names(data.mean))] #coefficient of variation for precipitation
+    data.sd[,-c(1:2)] <- sweep(data.sd[,-c(1:2)], MARGIN=2, STATS=as.vector(unlist(data.sd[1,-c(1:2)])), "/")-1 # express sd relative to observational
     data.bias <- data.mean
     data.bias[,-c(1:2)] <- sweep(data.mean[,-c(1:2)], MARGIN=2, STATS=as.vector(unlist(data.mean[1,-c(1:2)])), "-")
-    data.bias[,grep("PPT", names(data.bias))] <- sweep(data.mean[,grep("PPT", names(data.bias))], MARGIN=2, STATS=as.vector(unlist(data.mean[1,grep("PPT", names(data.bias))])), "/") #express bias as relative for precipitation
+    data.bias[,grep("PPT", names(data.bias))] <- sweep(data.mean[,grep("PPT", names(data.bias))], MARGIN=2, STATS=as.vector(unlist(data.mean[1,grep("PPT", names(data.bias))])), "/")-1 #express bias as relative for precipitation
     
-    variables <- names(data.mean)[-c(1:2)]
-    
-    x <- get(paste("data", funs[xfun], sep="."))[, which(variables==variable1)]
-    y <- get(paste("data", funs[yfun], sep="."))[, which(variables==variable2)]
+    x <- get(paste("data", funs[xfun], sep="."))[, which(names(data.mean)==variable1)]
+    y <- get(paste("data", funs[yfun], sep="."))[, which(names(data.mean)==variable2)]
 
     # xlim=if(variable.type1=="ratio") range(x) else if(min(x)<0) range(x) else c(0, max(x))
     # ylim=if(variable.type2=="ratio") range(y) else if(min(y)<0) range(y) else c(0, max(y))
@@ -334,8 +332,8 @@ server <- function(input, output) {
     )
     par(mgp=c(2.5,0.25, 0))
     title(ylab=paste(fun.names[yfun], variable.names$Variable[which(variable.names$Code==variable2)]))
-    # lines(if(variable.type1=="ratio") c(1,1) else c(0,0), c(-99,99), lty=2, col="gray")
-    # lines(c(-99,99), if(variable.type2=="ratio") c(1,1) else c(0,0), lty=2, col="gray")
+    lines(c(0,0), c(-99,99), lty=2, col="gray")
+    lines(c(-99,99), c(0,0), lty=2, col="gray")
 
     gcms <- unique(data.mean$gcm[!is.na(data.mean$run)])
 
@@ -359,10 +357,10 @@ server <- function(input, output) {
 
     if(element1=="PPT"){
       axis(1, at=seq(-99,99,0.1), labels=paste(round(seq(-99,99,0.1)*100-100), "%", sep=""), tck=0)
-    } else axis(1, at=seq(round(range(x)[1]-1), round(range(x)[2]+1), round(diff(range(x))/7, if(diff(range(x))<3.5) 1 else 0)), labels=seq(round(range(x)[1]-1),round(range(x)[2]+1), round(diff(range(x))/7, if(diff(range(x))<3.5) 1 else 0)), tck=0)
+    } else axis(1, at=pretty(x), labels=pretty(x), tck=0)
     if(element2=="PPT"){
       axis(2, at=seq(-99,99,0.1), labels=paste(round(seq(-99,99,0.1)*100-100), "%", sep=""), las=2, tck=0)
-    } else axis(2, at=seq(round(range(y)[1]-1), round(range(y)[2]+1), round(diff(range(y))/7, if(diff(range(y))<3.5) 1 else 0)), labels=seq(round(range(y)[1]-1),round(range(y)[2]+1), round(diff(range(y))/7, if(diff(range(y))<3.5) 1 else 0)), las=2, tck=0)
+    } else axis(2, at=pretty(y), labels=pretty(y), las=2, tck=0)
 
     # legend("bottomleft", legend = c("2001-2019", "2011-2019"), title = "Observed change", pch=c(16, 1), pt.cex=2, col="red", bty="n")
 

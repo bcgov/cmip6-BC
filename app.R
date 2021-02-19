@@ -1,16 +1,12 @@
 ## R Shiny app for visualization of CMIP6 global climate model simulations for BC and subregions
 ## author: Colin Mahony colin.mahony@gov.bc.ca
 
-
 library(shiny)
 library(RColorBrewer)
 library(DT)
 library(scales)
 library(shinydashboard)
 library(markdown)
-library(bcgovr)
-
-bcgovr::insert_bcgov_apache_header() 
 
 # ----------------------------------------------
 # Load the input data
@@ -18,17 +14,9 @@ bcgovr::insert_bcgov_apache_header()
 
 modelMetadata <- read.csv("data/ModelList.csv")
 
-dem.pts <- read.csv("data/dem_cmip6eval.csv")
-
-# ## time series for observations
-# obs.ts <- read.csv("data/obs.ts.csv") #gridded station observations
-# era5.ts <- read.csv("data/era5.ts.csv") #ERA5 reanalysis
-
-# list of variables
-# variables <- names(obs.ts)[-1]
-
 # Define ecoprovinces (subregions of BC) and climate elements
-ecoprovs <- c("BC", sort(as.character(unique(dem.pts$id2))))
+files <- list.files("data/", pattern="^summary.mean")
+ecoprovs <- unique(sapply(strsplit(files, "[.]"), "[", 3))
 ecoprov.names <- c("British Columbia", "Boreal Plains", "Central Interior", "Coast and Mountains", "Georgia Depression", "Northern Boreal Mountains", "Sub-Boreal Interior", "Southern Interior Mountains", "Southern Interior", "Taiga Plains")
 elements <- c("Tave", "Tmax", "Tmin", "PPT")
 element.names <- c("Mean temperature" , "Mean daily maximum temperature (Tmax)", "Mean daily minimum temperature (Tmin)", "Precipitation")

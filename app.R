@@ -1,7 +1,7 @@
 ## R Shiny app for visualization of CMIP6 global climate model simulations for BC and subregions
 ## author: Colin Mahony colin.mahony@gov.bc.ca
 
-# Copyright 2021 Colin Mahony colin.mahony@gov.bc.ca
+# Copyright 2021 Colin Mahony
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

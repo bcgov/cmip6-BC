@@ -8,6 +8,7 @@ library(DT)
 library(scales)
 library(shinydashboard)
 library(markdown)
+library(reshape2)
 
 
 # ----------------------------------------------
@@ -290,84 +291,6 @@ ui <- fluidPage(
 # Define server logic ----
 server <- function(input, output) {
   
-  output$scatterPlot <- renderPlot({
-
-    # ecoprov <- ecoprovs[1]
-    # yeartime1 <- yeartimes[3]
-    # yeartime2 <- yeartimes[3]
-    # element1 <- elements[1]
-    # element2 <- elements[1]
-    # xfun <- 1
-    # yfun <- 2
- 
-    ecoprov <- ecoprovs[which(ecoprov.names==input$ecoprov.name.II)]
-    yeartime1 <- yeartimes[which(yeartime.names==input$yeartime3)]
-    yeartime2 <- if(input$compare2==T) yeartimes[which(yeartime.names==input$yeartime4)] else yeartimes[which(yeartime.names==input$yeartime3)]
-    element1 <- elements[which(element.names==input$element3)]
-    element2 <- if(input$compare2==T) elements[which(element.names==input$element4)] else elements[which(element.names==input$element3)]
-    xfun <- as.numeric(input$xfun)
-    yfun <- as.numeric(input$yfun)
-    
-    variable1 <- paste(element1, yeartime1, sep= if(yeartime1%in%seasons) "_" else "")
-    variable2 <- paste(element2, yeartime2, sep= if(yeartime2%in%seasons) "_" else "")
-
-    data.mean <- read.csv(paste("data/summary.mean", ecoprov, "csv", sep="."), stringsAsFactors = F)
-    data.sd <- read.csv(paste("data/summary.sd", ecoprov, "csv", sep="."), stringsAsFactors = F)
-    data.sd[,-c(1:2)] <- sweep(data.sd[,-c(1:2)], MARGIN=2, STATS=as.vector(unlist(data.sd[1,-c(1:2)])), "/")-1 # express sd relative to observational
-    data.bias <- data.mean
-    data.bias[,-c(1:2)] <- sweep(data.mean[,-c(1:2)], MARGIN=2, STATS=as.vector(unlist(data.mean[1,-c(1:2)])), "-")
-    data.bias[,grep("PPT", names(data.bias))] <- sweep(data.mean[,grep("PPT", names(data.bias))], MARGIN=2, STATS=as.vector(unlist(data.mean[1,grep("PPT", names(data.bias))])), "/")-1 #express bias as relative for precipitation
-    
-    x <- get(paste("data", funs[xfun], sep="."))[, which(names(data.mean)==variable1)]
-    y <- get(paste("data", funs[yfun], sep="."))[, which(names(data.mean)==variable2)]
-
-    # xlim=if(variable.type1=="ratio") range(x) else if(min(x)<0) range(x) else c(0, max(x))
-    # ylim=if(variable.type2=="ratio") range(y) else if(min(y)<0) range(y) else c(0, max(y))
-    xlim=range(x)*c(if(min(x)<0) 1.1 else 0.9, if(max(x)>0) 1.1 else 0.9)
-    ylim=range(y)*c(if(min(y)<0) 1.1 else 0.9, if(max(y)>0) 1.1 else 0.9)
-
-    par(mar=c(3,4,0,1), mgp=c(1.25, 0.25,0), cex=1.5)
-    plot(x,y,col="white", tck=0, xaxt="n", yaxt="n", xlim=xlim, ylim=ylim, ylab="",
-         xlab=paste(fun.names[xfun], variable.names$Variable[which(variable.names$Code==variable1)]),
-    )
-    par(mgp=c(2.5,0.25, 0))
-    title(ylab=paste(fun.names[yfun], variable.names$Variable[which(variable.names$Code==variable2)]))
-    lines(c(0,0), c(-99,99), lty=2, col="gray")
-    lines(c(-99,99), c(0,0), lty=2, col="gray")
-
-    gcms <- unique(data.mean$gcm[!is.na(data.mean$run)])
-
-    mods <- substr(gcms, 1, 3)
-    mods[which(mods=="CNR")] <- paste("MIR", c("c", "e"), sep="")
-    mods[which(mods=="MIR")] <- paste("MIR", c("e", "6"), sep="")
-    mods[which(mods=="MPI")] <- paste("MPI", c("h", "l"), sep="")
-
-    colors = grDevices::colors()[grep('gr(a|e)y', grDevices::colors(), invert = T)][-1]
-    set.seed(2)
-    ColScheme <- c(brewer.pal(n=12, "Paired"),sample(colors,length(gcms)-12))
-    ColScheme[11] <- "blue"
-
-    for(gcm in gcms){
-      i=which(gcms==gcm)
-      s=which(data.mean$gcm==gcm)
-      points(x[s],y[s], pch=21, bg=ColScheme[i], cex=1)
-      points(mean(x[s]),mean(y[s]), pch=21, bg=ColScheme[i], cex=4)
-      text(mean(x[s]),mean(y[s]), mods[i], cex=0.7, font=2)
-    }
-
-    if(element1=="PPT"){
-      axis(1, at=seq(-99,99,0.1), labels=paste(round(seq(-99,99,0.1)*100-100), "%", sep=""), tck=0)
-    } else axis(1, at=pretty(x), labels=pretty(x), tck=0)
-    if(element2=="PPT"){
-      axis(2, at=seq(-99,99,0.1), labels=paste(round(seq(-99,99,0.1)*100-100), "%", sep=""), las=2, tck=0)
-    } else axis(2, at=pretty(y), labels=pretty(y), las=2, tck=0)
-
-    # legend("bottomleft", legend = c("2001-2019", "2011-2019"), title = "Observed change", pch=c(16, 1), pt.cex=2, col="red", bty="n")
-
-  },
-  height=reactive(ifelse(!is.null(input$innerWidth),input$innerWidth*0.4,0))
-  )
-  
   output$timeSeries <- renderPlot({
     
     # user specificationS
@@ -558,7 +481,85 @@ server <- function(input, output) {
   height=reactive(ifelse(!is.null(input$innerWidth),input$innerWidth*0.5,0))
   )
   
-
+  output$scatterPlot <- renderPlot({
+    
+    # ecoprov <- ecoprovs[1]
+    # yeartime1 <- yeartimes[3]
+    # yeartime2 <- yeartimes[3]
+    # element1 <- elements[4]
+    # element2 <- elements[4]
+    # xfun <- 1
+    # yfun <- 2
+    
+    ecoprov <- ecoprovs[which(ecoprov.names==input$ecoprov.name.II)]
+    yeartime1 <- yeartimes[which(yeartime.names==input$yeartime3)]
+    yeartime2 <- if(input$compare2==T) yeartimes[which(yeartime.names==input$yeartime4)] else yeartimes[which(yeartime.names==input$yeartime3)]
+    element1 <- elements[which(element.names==input$element3)]
+    element2 <- if(input$compare2==T) elements[which(element.names==input$element4)] else elements[which(element.names==input$element3)]
+    xfun <- as.numeric(input$xfun)
+    yfun <- as.numeric(input$yfun)
+    
+    variable1 <- paste(element1, yeartime1, sep= if(yeartime1%in%seasons) "_" else "")
+    variable2 <- paste(element2, yeartime2, sep= if(yeartime2%in%seasons) "_" else "")
+    
+    data.mean <- read.csv(paste("data/summary.mean", ecoprov, "csv", sep="."), stringsAsFactors = F)
+    data.sd <- read.csv(paste("data/summary.sd", ecoprov, "csv", sep="."), stringsAsFactors = F)
+    data.sd[,grep("PPT", names(data.bias))] <- data.sd[,grep("PPT", names(data.bias))]/data.mean[,grep("PPT", names(data.bias))] # convert sd to coefficient of variation for precipitation
+    data.sd[,-c(1:2)] <- sweep(data.sd[,-c(1:2)], MARGIN=2, STATS=as.vector(unlist(data.sd[1,-c(1:2)])), "/")-1 # express sd relative to observational
+    data.bias <- data.mean
+    data.bias[,-c(1:2)] <- sweep(data.mean[,-c(1:2)], MARGIN=2, STATS=as.vector(unlist(data.mean[1,-c(1:2)])), "-")
+    data.bias[,grep("PPT", names(data.bias))] <- sweep(data.mean[,grep("PPT", names(data.mean))], MARGIN=2, STATS=as.vector(unlist(data.mean[1,grep("PPT", names(data.mean))])), "/")-1 #express bias as relative for precipitation
+    
+    x <- get(paste("data", funs[xfun], sep="."))[, which(names(data.mean)==variable1)]
+    y <- get(paste("data", funs[yfun], sep="."))[, which(names(data.mean)==variable2)]
+    
+    # xlim=if(variable.type1=="ratio") range(x) else if(min(x)<0) range(x) else c(0, max(x))
+    # ylim=if(variable.type2=="ratio") range(y) else if(min(y)<0) range(y) else c(0, max(y))
+    xlim=range(x)*c(if(min(x)<0) 1.1 else 0.9, if(max(x)>0) 1.1 else 0.9)
+    ylim=range(y)*c(if(min(y)<0) 1.1 else 0.9, if(max(y)>0) 1.1 else 0.9)
+    
+    par(mar=c(3,4,0,1), mgp=c(1.25, 0.25,0), cex=1.5)
+    plot(x,y,col="white", tck=0, xaxt="n", yaxt="n", xlim=xlim, ylim=ylim, ylab="",
+         xlab=paste(fun.names[xfun], variable.names$Variable[which(variable.names$Code==variable1)]),
+    )
+    par(mgp=c(2.5,0.25, 0))
+    title(ylab=paste(fun.names[yfun], variable.names$Variable[which(variable.names$Code==variable2)]))
+    lines(c(0,0), c(-99,99), lty=2, col="gray")
+    lines(c(-99,99), c(0,0), lty=2, col="gray")
+    
+    gcms <- unique(data.mean$gcm[!is.na(data.mean$run)])
+    
+    mods <- substr(gcms, 1, 3)
+    mods[which(mods=="CNR")] <- paste("MIR", c("c", "e"), sep="")
+    mods[which(mods=="MIR")] <- paste("MIR", c("e", "6"), sep="")
+    mods[which(mods=="MPI")] <- paste("MPI", c("h", "l"), sep="")
+    
+    colors = grDevices::colors()[grep('gr(a|e)y', grDevices::colors(), invert = T)][-1]
+    set.seed(2)
+    ColScheme <- c(brewer.pal(n=12, "Paired"),sample(colors,length(gcms)-12))
+    ColScheme[11] <- "blue"
+    
+    for(gcm in gcms){
+      i=which(gcms==gcm)
+      s=which(data.mean$gcm==gcm)
+      points(x[s],y[s], pch=21, bg=ColScheme[i], cex=1)
+      points(mean(x[s]),mean(y[s]), pch=21, bg=ColScheme[i], cex=4)
+      text(mean(x[s]),mean(y[s]), mods[i], cex=0.7, font=2)
+    }
+    
+    if(element1=="PPT"){
+      axis(1, at=seq(-99,99,0.1), labels=paste(round(seq(-99,99,0.1)*100), "%", sep=""), tck=0)
+    } else axis(1, at=pretty(x), labels=pretty(x), tck=0)
+    if(element2=="PPT"){
+      axis(2, at=seq(-99,99,0.1), labels=paste(round(seq(-99,99,0.1)*100), "%", sep=""), las=2, tck=0)
+    } else axis(2, at=pretty(y), labels=pretty(y), las=2, tck=0)
+    
+    # legend("bottomleft", legend = c("2001-2019", "2011-2019"), title = "Observed change", pch=c(16, 1), pt.cex=2, col="red", bty="n")
+    
+  },
+  height=reactive(ifelse(!is.null(input$innerWidth),input$innerWidth*0.4,0))
+  )
+  
   output$table <- DT::renderDataTable({
     DT::datatable(modelMetadata, 
                   options = list(pageLength = dim(modelMetadata)[1]), 

@@ -8,8 +8,9 @@ library(DT)
 library(scales)
 library(shinydashboard)
 library(markdown)
-library(reshape2)
+library(bcgovr)
 
+bcgovr::insert_bcgov_apache_header() 
 
 # ----------------------------------------------
 # Load the input data

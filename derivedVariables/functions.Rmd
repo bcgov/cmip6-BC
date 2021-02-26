@@ -1,5 +1,15 @@
-## *** NFFD  ***
+## Mock min and max temp list for testing
 
+```{r}
+t_min_list = list("1"=-12, "2"=-8, "3"=-4, "4"=-3, "5"=8, "6"=10, "7"=11, "8"=15, "9"=18, "10"=3, "11"=-2, "12"=-10)
+
+t_max_list = list("1"=-1, "2"=-3, "3"=-2, "4"=0, "5"=18, "6"=22, "7"=28, "8"=23, "9"=22, "10"=6, "11"=3, "12"=-7)
+```
+
+
+## NFFD
+
+```{r}
 nffd_param <- read.csv(file = "../optimizationTables/param_NFFD.csv", sep=',', header = TRUE)
 
 # nffd: number of frost free days
@@ -15,9 +25,18 @@ nffd <- function(m, tm) {
 
   return( a/(1 + exp(-(tm - t0)/b)))
 }
+```
 
-## *** FFP, bFFP and eFFP ***
+### Test
 
+```{r}
+nffd_june = nffd(6, 15)
+```
+
+
+## FFP, bFFP and eFFP
+
+```{r}
 # bffp: the day of the yearon which FFP begins
 # t_min_list: named list of monthly minimum temperature for each month
 # td: difference between the mean warmest monthly temperature and the mean coldest monthly temperature
@@ -46,8 +65,21 @@ effp <- function(nffd, t_min_list) {
 ffp <-function(effp,bffp) {
   return(effp - bffp)
 }
+```
 
-## *** PAS ***
+### Test
+
+```{r}
+bffp_test <- bffp(10, nffd_june, t_min_list)
+effp_test <- effp(nffd_june, t_min_list)
+ffp_test <- ffp(effp_test, bffp_test)
+
+cat(bffp_test, effp_test, ffp_test)
+```
+
+## PAS
+
+```{r}
 pas_param <- read.csv(file = "../optimizationTables/param_PAS.csv", sep=',', header = TRUE)
 
 # pas: precipitation as snow
@@ -62,9 +94,18 @@ pas <- function(m, tm) {
 
   return( 1/(1 + exp(-(tm - t0)/b)))
 }
+```
 
-## *** EMT, EXT ***
+### Test
 
+```{r}
+pas(5, 10)
+```
+
+
+## EMT, EXT
+
+```{r}
 # emt: extreme minimum temperature
 # t_min_list: named list of monthly minimum temperature for each month
 # td: difference between the mean warmest monthly temperature and the mean coldest monthly temperature
@@ -94,9 +135,17 @@ ext <- function(t_max_list, td) {
   
   return(10.64245 + -1.92005 * tmax7 + 0.04816 * tmax7^2 + 2.51176 * tmax8 - 0.03088 * tmax8^2 - 0.01311 * tmaxx^2 + 0.33167 * td - 0.001 * td^2)
 }
+```
 
-## *** RH ***
+# Test
 
+```{r}
+emt(t_min_list, 23)
+```
+
+## RH
+
+```{r}
 # es: saturated vapour pressure at a temperature t
 # t: air temperature
 es <- function(t) {
@@ -122,8 +171,16 @@ rh <- function(tmin_mean, tmax_mean) {
   
   return((100 * es(tmin_mean)/es_avg))
 }
+```
 
-# *** DD ***
+```{r}
+es(-10)
+rh(-12, 3)
+```
+
+# DD
+
+```{r}
 dd_param_below_0 <- read.csv(file = "../optimizationTables/param_DD_S1.csv", sep=',', header = TRUE)
 dd_param_above_5 <- read.csv(file = "../optimizationTables/param_DD_S2.csv", sep=',', header = TRUE)
 dd_param_below_18 <- read.csv(file = "../optimizationTables/param_DD_S3.csv", sep=',', header = TRUE)
@@ -161,3 +218,15 @@ dd <- function(m, tm) {
     return(c + (beta * tm))
   }
 }
+```
+
+```{r}
+dd(4, 14)
+```
+
+## Test functions
+
+```{r}
+
+```
+

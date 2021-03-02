@@ -6,11 +6,42 @@ t_min_list = list("1"=-12, "2"=-8, "3"=-4, "4"=-3, "5"=8, "6"=10, "7"=11, "8"=15
 t_max_list = list("1"=-1, "2"=-3, "3"=-2, "4"=0, "5"=18, "6"=22, "7"=28, "8"=23, "9"=22, "10"=6, "11"=3, "12"=-7)
 ```
 
+```{r}
+library(ggplot2)
+library(viridis)
+library(ggExtra)
+library(dplyr)
+library(plotly)
+```
 
-## NFFD
+
+## PLOT
 
 ```{r}
-nffd_param <- read.csv(file = "../optimizationTables/param_NFFD.csv", sep=',', header = TRUE)
+
+
+createTimeSeries <- function (data, y_lab) {
+
+  # Most  plot
+  p <- ggplot(data, aes(x=Date, y=Value, group = 1)) +
+    geom_line(color="steelblue") +
+    xlab("") +
+    ylab(y_lab)
+  
+#  +
+#    theme_ipsum() +
+#    theme(axis.text.x=element_text(angle=60, hjust=1))
+  
+  p <- ggplotly(p)
+  
+  p
+}
+```
+
+
+## NFFD
+```{r}
+nffd_param <- read.csv(file = "../optimizedParameterTables/param_NFFD.csv", sep=',', header = TRUE)
 
 # nffd: number of frost free days
 # m: month of the year
@@ -22,22 +53,70 @@ nffd <- function(m, tm) {
   a <- optimized_params$a
   b <- optimized_params$b
   t0 <- optimized_params$T0
+  
+  cat(t0)
 
   return( a/(1 + exp(-(tm - t0)/b)))
 }
 ```
 
+
+```{r}
+nffd(2, -3)
+```
+
+
 ### Test
 
 ```{r}
-nffd_june = nffd(6, 15)
+scenario = "historical"
+model =  "ACCESS.ESM1.5"
+
+list_of_nffd_df = list()
+
+
+for(m in 1:12) {
+
+  month = sprintf("%02d",m)
+  file = paste("../data/ensmax.COM.Tmin", month, ".csv", sep="")
+  
+
+  tmin_month <- read.csv(file, sep=',', header = TRUE)
+  tmin_month <- tmin_month[tmin_month$scenario == 'historical',][c("Year",model)]
+  tmin_month[model] <- lapply(relevant_data[model], function(tm) nffd(m, tm))
+  tmin_month["Month"] <- m
+  tmin_month["Value"] <- tmin_month[model]
+
+  
+  tmin_month$Date<-as.Date(with(tmin_month,paste(Year,Month, "01", sep="-")),"%Y-%m-%d")
+  
+  list_of_nffd_df[[m]] <-tmin_month 
+}
+
+nffd_all <- data.table::rbindlist(list_of_nffd_df)
+View(nffd_all)
+
 ```
+
+
+```{r}
+createTimeSeries(nffd_all, "NFFD Historical")
+```
+
+
+```{r}
+agg = aggregate(nffd_all,by = list(nffd_all$Year),FUN = mean)
+createTimeSeries(agg, "NFFD Historical")
+
+```
+
+
 
 
 ## FFP, bFFP and eFFP
 
 ```{r}
-# bffp: the day of the yearon which FFP begins
+# bffp: the day of the year on which FFP begins
 # t_min_list: named list of monthly minimum temperature for each month
 # td: difference between the mean warmest monthly temperature and the mean coldest monthly temperature
 # nffd: number of frost-free days.
@@ -80,7 +159,7 @@ cat(bffp_test, effp_test, ffp_test)
 ## PAS
 
 ```{r}
-pas_param <- read.csv(file = "../optimizationTables/param_PAS.csv", sep=',', header = TRUE)
+pas_param <- read.csv(file = "../optimizedParameterTables/param_PAS.csv", sep=',', header = TRUE)
 
 # pas: precipitation as snow
 # m: month of the year
@@ -181,10 +260,10 @@ rh(-12, 3)
 # DD
 
 ```{r}
-dd_param_below_0 <- read.csv(file = "../optimizationTables/param_DD_S1.csv", sep=',', header = TRUE)
-dd_param_above_5 <- read.csv(file = "../optimizationTables/param_DD_S2.csv", sep=',', header = TRUE)
-dd_param_below_18 <- read.csv(file = "../optimizationTables/param_DD_S3.csv", sep=',', header = TRUE)
-dd_param_above_18 <- read.csv(file = "../optimizationTables/param_DD_S4.csv", sep=',', header = TRUE)
+dd_param_below_0 <- read.csv(file = "../optimizedParameterTables/param_DD_S1.csv", sep=',', header = TRUE)
+dd_param_above_5 <- read.csv(file = "../optimizedParameterTables/param_DD_S2.csv", sep=',', header = TRUE)
+dd_param_below_18 <- read.csv(file = "../optimizedParameterTables/param_DD_S3.csv", sep=',', header = TRUE)
+dd_param_above_18 <- read.csv(file = "../optimizedParameterTables/param_DD_S4.csv", sep=',', header = TRUE)
 
 dd <- function(m, tm) {
   

@@ -13,8 +13,9 @@ library(plotly)
 ```{r}
 ## TODO: Memoize
 reduce_func <- function (ensamble, region, month, varibale, scenario, model, func) {
-
-  return(func(get_data_df(ensamble, region, month, varibale, scenario, model)))
+  
+  data <- get_data(ensamble, region, month, varibale, scenario, model)
+  return(func(data))
 }
 
 # warmest_year_temp <- sapply(1:12, function(month) reduce_func("ensmax", "BC", month, "Tave", "historical", "ACCESS.ESM1.5", max))
@@ -75,9 +76,8 @@ createTimeSeries <- function (data, y_lab) {
 # m: month of the year
 # tm: min temperature for that month
 nffd <- function(m, tm) {
-  
+
   nffd_param <- read.csv(file = "../optimizedParameterTables/param_NFFD.csv", sep=',', header = TRUE)
-  
   optimized_params <- nffd_param[nffd_param$Month == m,]
 
   a <- optimized_params$a
@@ -97,16 +97,12 @@ nffd(2, -3)
 ### Fucntion to compute NFFD with data
 
 ```{r}
-compute_nffd <- function (month, scenario, model) {
-
-  month_two_digits = sprintf("%02d",month)
-  file = paste("../data/ensmax.BC.Tmin", month_two_digits, ".csv", sep="")
+compute_nffd <- function (ensamble, region, scenario, model, month) {
   
-  tmin_month <- read.csv(file, sep=',', header = TRUE)
+  tmin_month <- get_data(ensamble, region, month, "Tmin", scenario, model) 
 
-  tmin_month <- tmin_month[tmin_month$scenario == 'historical',][c("Year",model)]
-  
-  nffd_value <- lapply(tmin_month[model], function(tm) nffd(month, tm))
+  #nffd_value <- lapply(tmin_month$Value, function(tm) nffd(month, tm))
+  nffd_value <-  nffd(month, tmin_month$Value)
   nffd_year <- tmin_month$Year
   #nffd_date <- as.Date(with(tmin_month,paste(Year, month, "01", sep="-")),"%Y-%m-%d")
   
@@ -120,22 +116,26 @@ compute_nffd <- function (month, scenario, model) {
 ### Test Monthly NFFD
 
 ```{r}
-scenario = "historical"
-model =  "ACCESS.ESM1.5"
-
-jan_nffd <- compute_nffd(1, scenario, model)
-feb_nffd <- compute_nffd(2, scenario, model)
-mar_nffd <- compute_nffd(3, scenario, model)
-apr_nffd <- compute_nffd(4, scenario, model)
-may_nffd <- compute_nffd(5, scenario, model)
-jun_nffd <- compute_nffd(6, scenario, model)
-jul_nffd <- compute_nffd(7, scenario, model)
-aug_nffd <- compute_nffd(8, scenario, model)
-sep_nffd <- compute_nffd(9, scenario, model)
-oct_nffd <- compute_nffd(10, scenario, model)
-nov_nffd <- compute_nffd(11, scenario, model)
-dec_nffd <- compute_nffd(12, scenario, model)
+jan_nffd <- compute_nffd("ensmax", "BC","historical", "ACCESS.ESM1.5", 1)
 ```
+
+
+```{r}
+jan_nffd <- compute_nffd("ensmax", "BC","historical", "ACCESS.ESM1.5", 1)
+feb_nffd <- compute_nffd("ensmax", "BC","historical", "ACCESS.ESM1.5", 2)
+mar_nffd <- compute_nffd("ensmax", "BC","historical", "ACCESS.ESM1.5", 3)
+apr_nffd <- compute_nffd("ensmax", "BC","historical", "ACCESS.ESM1.5", 4)
+may_nffd <- compute_nffd("ensmax", "BC","historical", "ACCESS.ESM1.5", 5)
+jun_nffd <- compute_nffd("ensmax", "BC","historical", "ACCESS.ESM1.5", 6)
+jul_nffd <- compute_nffd("ensmax", "BC","historical", "ACCESS.ESM1.5", 7)
+aug_nffd <- compute_nffd("ensmax", "BC","historical", "ACCESS.ESM1.5", 8)
+sep_nffd <- compute_nffd("ensmax", "BC","historical", "ACCESS.ESM1.5", 9)
+oct_nffd <- compute_nffd("ensmax", "BC","historical", "ACCESS.ESM1.5", 10)
+nov_nffd <- compute_nffd("ensmax", "BC","historical", "ACCESS.ESM1.5", 11)
+dec_nffd <- compute_nffd("ensmax", "BC","historical", "ACCESS.ESM1.5", 12)
+```
+
+
 ```{r}
 createTimeSeries(jan_nffd, "NFFD Historical Jan")
 createTimeSeries(feb_nffd, "NFFD Historical Feb")
@@ -155,13 +155,13 @@ createTimeSeries(dec_nffd, "NFFD Historical Dec")
 ### Function to compute seasonal NFFD
 
 ```{r}
-#Winter
-season_nffd <- function(months, scenario, model) {
+period_nffd <- function(ensamble, region, scenario, model, months) {
   
   list_of_monthly_nffd = list()
   
   for(month in months) {
-      list_of_monthly_nffd[[month]] <- compute_nffd(month, scenario, model) 
+      list_of_monthly_nffd[[month]] <- compute_nffd(ensamble, region,scenario, model, month)
+      
   }
 
   
@@ -180,16 +180,16 @@ scenario = "historical"
 model =  "ACCESS.ESM1.5"
 
 winter_months = c(12,1,2)
-nffd_winter <- season_nffd(winter_months,scenario, model)
+nffd_winter <- period_nffd("ensmax", "BC", "historical", "ACCESS.ESM1.5", winter_months)
 
 spring_months = c(3,4,5)
-nffd_spring <- season_nffd(spring_months,scenario, model)
+nffd_spring <- period_nffd("ensmax", "BC","historical", "ACCESS.ESM1.5", spring_months)
 
 summer_months = c(6,7,8)
-nffd_summer <- season_nffd(summer_months,scenario, model)
+nffd_summer <- period_nffd("ensmax", "BC","historical", "ACCESS.ESM1.5", summer_months)
 
 autumn_months = c(9,10,11)
-nffd_autum <- season_nffd(autumn_months,scenario, model)
+nffd_autum <- period_nffd("ensmax", "BC", "historical", "ACCESS.ESM1.5", autumn_months)
 ```
 
 ```{r}
@@ -205,13 +205,13 @@ createTimeSeries(nffd_autum, "NFFD Historical Autum")
 
 ```{r}
 # td: difference between the mean warmest monthly temperature and the mean coldest monthly temperature
-td <- function(ensamble, region, varibale, scenario, model) {
+td <- function(ensamble, region, scenario, model) {
 
-  warmest_year_temp <- aggregate_accross_months(ensamble, region, 1:12, varibale, scenario, model, max)
-  coldest_year_temp <- aggregate_accross_months(ensamble, region, 1:12, varibale, scenario, model, min)
+  warmest_temp_of_year <- aggregate_accross_months(ensamble, region, 1:12, "Tave", scenario, model, max)
+  coldest_temp__of_year <- aggregate_accross_months(ensamble, region, 1:12, "Tave", scenario, model, min)
   
-  temp_dif <- warmest_year_temp$Value - coldest_year_temp$Value
-  year <- coldest_year_temp$Year
+  temp_dif <- warmest_temp_of_year$Value - coldest_temp__of_year$Value
+  year <- coldest_temp__of_year$Year
   
   return(data.frame(Year=year, Value=temp_dif))
 }
@@ -219,10 +219,11 @@ td <- function(ensamble, region, varibale, scenario, model) {
 # bffp: the day of the year on which FFP begins
 # td: difference between the mean warmest monthly temperature and the mean coldest monthly temperature
 # nffd: number of frost-free days.
-bffp <- function(td, nffd, scenario, model) {
+bffp <- function(ensamble, region, scenario, model,td, nffd) {
+
+  tmin4 <- reduce_func(ensamble, region, 4, "Tmin", scenario, model, min) 
+  tmin6 <- reduce_func(ensamble, region, 6, "Tmin", scenario, model, min) 
   
-  tmin4 <- compute_min(4, scenario, model)
-  tmin6 <- compute_min(6, scenario, model)
     
   bffp_value <- 352.1358994 + -0.021715653 * tmin4^2 + -3.542187618 * tmin6 + 0.020359471 * tmin6^2 - 4.897998097 * td$Value + 0.033521327 * td$Value^2 - 2.164862277 * nffd$Value + 0.006767633 * nffd$Value^2 - 0.00000929 * nffd$Value^3 + 0.043516586 * (td$Value * nffd$Value) - 0.00000253 * (td$Value * nffd$Value)^2
   
@@ -234,11 +235,12 @@ bffp <- function(td, nffd, scenario, model) {
 # effp: the day of the year on which FFP ends 
 # t_min_list: named list of monthly minimum temperature for each month
 # td: difference between the mean warmest monthly temperature and the mean coldest monthly temperature
-effp <- function(nffd) {
+effp <- function(ensamble, region, scenario, model, nffd)  {
     
-  tmin9 <- compute_min(9, scenario, model)
-  tmin10 <- compute_min(10, scenario, model)
-  tmin11 <- compute_min(11, scenario, model)
+  tmin9 <- reduce_func(ensamble, region, 9, "Tmin", scenario, model, min) 
+  tmin10 <- reduce_func(ensamble, region, 10, "Tmin", scenario, model, min) 
+  tmin11 <- reduce_func(ensamble, region, 11, "Tmin", scenario, model, min) 
+
     
   effp_value <- 243.7752209 + 4.134210825 * tmin9 - 0.162876448 * tmin9^2 + 1.248649021 * tmin10 + 0.145073612 * tmin10^2 + 0.004319892 * tmin10 + -0.005753127 * tmin10^2 - 0.06296471 * nffd$Value + 0.000399177 * nffd$Value^2
   
@@ -261,19 +263,20 @@ ffp <-function(effp,bffp) {
 ### Test
 
 ```{r}
-td_year <- td("ensmax", "BC", "Tave", "historical", "ACCESS.ESM1.5")
-nffd_year <- season_nffd(1:12, "historical", "ACCESS.ESM1.5")
-bffp_year <- bffp(year_td, nffd_year, "historical", "ACCESS.ESM1.5")
-effp_year <- effp(nffd_year)
+td_year <- td("ensmax", "BC", "historical", "ACCESS.ESM1.5")
+nffd_year <- period_nffd("ensmax", "BC", "historical", "ACCESS.ESM1.5", 1:12)
+bffp_year <- bffp("ensmax", "BC", "historical", "ACCESS.ESM1.5", year_td, nffd_year)
+effp_year <- effp("ensmax", "BC", "historical", "ACCESS.ESM1.5", nffd_year)
 ffp_year <- ffp(effp_year, bffp_year)
 ```
 
 ```{r}
-print(year_td)
-print(nffd_year)
-print(bffp_year)
-print(effp_year)
-print(ffp_year)
+createTimeSeries(td_year, "Temp Diff")
+createTimeSeries(nffd_year, "NFFD Yearly")
+createTimeSeries(bffp_year, "BFFP Yearly")
+createTimeSeries(effp_year, "EFFP Yearly")
+createTimeSeries(ffp_year, "FFP Yearly")
+
 ```
 
 ## PAS
@@ -282,64 +285,127 @@ print(ffp_year)
 # pas: precipitation as snow
 # m: month of the year
 # tm: min temperature for that month
-pas <- function(m, tm) {
+pas <- function(month, tmin, ppt) {
   
   pas_param <- read.csv(file = "../optimizedParameterTables/param_PAS.csv", sep=',', header = TRUE)
   
-  optimized_params <- pas_param[pas_param$Month == m,]
+  optimized_params <- pas_param[pas_param$Month == month,]
 
   b <- optimized_params$b
   t0 <- optimized_params$T0
 
-  return((1/(1 + exp(-(tm - t0)/b))) * p)
+  return((1/(1 + exp(-(tmin - t0)/b)))* ppt)
+} 
+```
+
+```{r}
+compute_pas <- function (ensamble, region, scenario, model, month) {
+  
+  tmin_month <- get_data(ensamble, region, month, "Tmin", scenario, model) 
+  ppt_month <- get_data(ensamble, region, month, "PPT", scenario, model) 
+
+
+  pas_value <-  pas(month, tmin_month$Value, ppt_month$Value)
+  pas_year <- tmin_month$Year
+  #nffd_date <- as.Date(with(tmin_month,paste(Year, month, "01", sep="-")),"%Y-%m-%d")
+  
+  pas_df <- data.frame(pas_year,pas_value)
+  names(pas_df) <- c("Year", "Value")
+  
+  return(pas_df)
 }
 ```
 
 ### Test
 
 ```{r}
-pas(5, 10)
+pas_jan <- compute_pas("ensmax", "BC", "historical", "ACCESS.ESM1.5", 1)
+pas_feb <- compute_pas("ensmax", "BC", "historical", "ACCESS.ESM1.5", 2)
+pas_mar <- compute_pas("ensmax", "BC", "historical", "ACCESS.ESM1.5", 3)
+pas_apr <- compute_pas("ensmax", "BC", "historical", "ACCESS.ESM1.5", 4)
+pas_may <- compute_pas("ensmax", "BC", "historical", "ACCESS.ESM1.5", 5)
+pas_jun <- compute_pas("ensmax", "BC", "historical", "ACCESS.ESM1.5", 6)
+pas_jul <- compute_pas("ensmax", "BC", "historical", "ACCESS.ESM1.5", 7)
+pas_aug <- compute_pas("ensmax", "BC", "historical", "ACCESS.ESM1.5", 8)
+pas_sep <- compute_pas("ensmax", "BC", "historical", "ACCESS.ESM1.5", 9)
+pas_oct <- compute_pas("ensmax", "BC", "historical", "ACCESS.ESM1.5", 10)
+pas_nov <- compute_pas("ensmax", "BC", "historical", "ACCESS.ESM1.5", 11)
+pas_dec <- compute_pas("ensmax", "BC", "historical", "ACCESS.ESM1.5", 12)
 ```
 
+```{r}
+createTimeSeries(pas_jan, "Preceip as snow Jan")
+createTimeSeries(pas_feb, "Preceip as snow Feb")
+createTimeSeries(pas_mar, "Preceip as snow Mar")
+createTimeSeries(pas_apr, "Preceip as snow Apr")
+createTimeSeries(pas_may, "Preceip as snow May")
+createTimeSeries(pas_jun, "Preceip as snow Jun")
+createTimeSeries(pas_jul, "Preceip as snow Jul")
+createTimeSeries(pas_aug, "Preceip as snow Aug")
+createTimeSeries(pas_sep, "Preceip as snow Sep")
+createTimeSeries(pas_oct, "Preceip as snow Oct")
+createTimeSeries(pas_nov, "Preceip as snow Nov")
+createTimeSeries(pas_dec, "Preceip as snow Dec")
+
+
+```
 
 ## EMT, EXT
 
 ```{r}
 # emt: extreme minimum temperature
-# t_min_list: named list of monthly minimum temperature for each month
 # td: difference between the mean warmest monthly temperature and the mean coldest monthly temperature
-emt <- function(t_min_list, td) {
+emt <- function(ensamble, region, scenario, model, td) {
   
-  tmin1 <- t_min_list[["1"]]
-  tmin12 <- t_min_list[["12"]]
+  tmin1 <- reduce_func(ensamble, region, 1, "Tmin", scenario, model, min) 
+  tmin12 <- reduce_func(ensamble, region, 12, "Tmin", scenario, model, min) 
 
-  # tminx: minimum temperature over the year
-  tminx <- min(sapply(t_min_list, min))
+  tminx <- aggregate_accross_months(ensamble, region, 1:12, "Tmin", scenario, model, min) # tminx: minimum min monthly temperature over the year
 
+  emt_value <- -23.02164 + 0.77908 * tmin1 + 0.67048 * tmin12 + 0.01075 * tminx$Value^2 + 0.11565 * td$Value
+  year <- td$Year
   
-  return(-23.02164 + 0.77908 * tmin1 + 0.67048 * tmin12 + 0.01075 * tminx^2 + 0.11565 * td)
+  return(data.frame(Year=year, Value=emt_value))
 }
 
 # ext: extreme maximum temperature
 # t_max_list: named list of monthly maximum temperature for each month
 # td: difference between the mean warmest monthly temperature and the mean coldest monthly temperature
-ext <- function(t_max_list, td) {
+ext <- function(ensamble, region, scenario, model, td) {
   
-  tmax7 <- t_max_list[["7"]]
-  tmax8 <- t_max_list[["8"]]
+  tmax7 <- reduce_func(ensamble, region, 1, "Tmax", scenario, model, max) 
+  tmax8 <- reduce_func(ensamble, region, 12, "Tmax", scenario, model, max) 
 
-  # tmaxx: maximum temperature over the year
-  tmaxx <- max(sapply(t_max_list, max))
+  tmaxx <- aggregate_accross_months(ensamble, region, 1:12, "Tmax", scenario, model, max)   # tmaxx: maximum max monthly temp over the year
+  print(tmaxx)
 
+  ext_value <- 10.64245 -1.92005 * tmax7 + 0.04816 * tmax7^2 + 2.51176 * tmax8 - 0.03088 * tmax8^2 -0.01311 * tmaxx$Value^2 + 0.33167 * td$Value - 0.001 * td$Value^2
   
-  return(10.64245 + -1.92005 * tmax7 + 0.04816 * tmax7^2 + 2.51176 * tmax8 - 0.03088 * tmax8^2 - 0.01311 * tmaxx^2 + 0.33167 * td - 0.001 * td^2)
+  year <- td$Year
+  
+  return(data.frame(Year=year, Value=ext_value))
+
 }
 ```
 
-# Test
+### Test EMT
 
 ```{r}
-emt(t_min_list, 23)
+td_year <- td("ensmax", "BC", "historical", "ACCESS.ESM1.5")
+emt_test <- emt("ensmax", "BC", "historical", "ACCESS.ESM1.5", td_year)
+
+createTimeSeries(emt_test, "Extreme min temp")
+
+```
+
+### Test EXT
+```{r}
+td_year <- td("ensmax", "BC", "historical", "ACCESS.ESM1.5")
+ext_test <- ext("ensmax", "BC", "historical", "ACCESS.ESM1.5", td_year)
+
+
+#View(ext_test)
+createTimeSeries(ext_test, "Extreme max temp")
 ```
 
 ## RH

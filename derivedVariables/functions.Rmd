@@ -360,7 +360,7 @@ emt <- function(ensamble, region, scenario, model, td) {
   tmin1 <- reduce_func(ensamble, region, 1, "Tmin", scenario, model, min) 
   tmin12 <- reduce_func(ensamble, region, 12, "Tmin", scenario, model, min) 
 
-  tminx <- aggregate_accross_months(ensamble, region, 1:12, "Tmin", scenario, model, min) # tminx: minimum min monthly temperature over the year
+  tminx <- aggregate_accross_months(ensamble, region, 1:12, "Tmin", scenario, model, min) # tminx: minimum min monthly temp over the year
 
   emt_value <- -23.02164 + 0.77908 * tmin1 + 0.67048 * tmin12 + 0.01075 * tminx$Value^2 + 0.11565 * td$Value
   year <- td$Year
@@ -415,13 +415,18 @@ createTimeSeries(ext_test, "Extreme max temp")
 # t: air temperature
 es <- function(t) {
   
-  svp <- 0.6105 * exp((17.273*t)/(t+237.3))
-  
-  if(t < 0) {
-    return(svp*(1 + (t*0.01)))
-  } else {
-    return(svp)
+  svp <- function(t) {
+    return(0.6105 * exp((17.273*t)/(t+237.3)))
   }
+  
+  es_value <- sapply(t, function(temp) {
+    if(temp < 0) {
+      return(svp(temp)*(1 + (temp*0.01)))
+    } else {
+      return(svp(temp))
+    }})
+  
+  return(es_value)
 }
 
 # *******************************************
@@ -431,16 +436,55 @@ es <- function(t) {
 # rh: relative humidity
 # tmin_mean: monthly mean minimum air temperature
 # tmax_mean: monthly mean maximum air temperature
-rh <- function(tmin_mean, tmax_mean) {
-  es_avg = (es(tmin_mean)+ es(tmax_mean))/2
+rh <- function(tmin, tmax) {
+  es_avg = (es(tmin)+ es(tmax))/2
   
-  return((100 * es(tmin_mean)/es_avg))
+  return((100 * es(tmin)/es_avg))
+}
+
+compute_rh <- function(ensamble, region, month, scenario, model) {
+  
+    tmin <- get_data(ensamble, region, month, "Tmin", scenario, model)
+    tmax <- get_data(ensamble, region, month, "Tmax", scenario, model)
+    
+    rh_value <- rh(tmin$Value, tmax$Value)
+    year <- tmin$Year
+
+    return(data.frame(Year=year, Value=rh_value))
+  
+
 }
 ```
 
 ```{r}
-es(-10)
-rh(-12, 3)
+rh_jan <- compute_rh("ensmax", "BC", 1, "historical", "ACCESS.ESM1.5")
+rh_feb <- compute_rh("ensmax", "BC", 2, "historical", "ACCESS.ESM1.5")
+rh_mar <- compute_rh("ensmax", "BC", 3, "historical", "ACCESS.ESM1.5")
+rh_apr <- compute_rh("ensmax", "BC", 4, "historical", "ACCESS.ESM1.5")
+rh_may <- compute_rh("ensmax", "BC", 5, "historical", "ACCESS.ESM1.5")
+rh_jun <- compute_rh("ensmax", "BC", 6, "historical", "ACCESS.ESM1.5")
+rh_jul <- compute_rh("ensmax", "BC", 7, "historical", "ACCESS.ESM1.5")
+rh_aug <- compute_rh("ensmax", "BC", 8, "historical", "ACCESS.ESM1.5")
+rh_sep <- compute_rh("ensmax", "BC", 9, "historical", "ACCESS.ESM1.5")
+rh_oct <- compute_rh("ensmax", "BC", 10, "historical", "ACCESS.ESM1.5")
+rh_nov <- compute_rh("ensmax", "BC", 11, "historical", "ACCESS.ESM1.5")
+rh_dec <- compute_rh("ensmax", "BC", 12, "historical", "ACCESS.ESM1.5")
+
+
+createTimeSeries(rh_jan, "RH January")
+createTimeSeries(rh_feb, "RH February")
+createTimeSeries(rh_mar, "RH March")
+createTimeSeries(rh_apr, "RH April")
+createTimeSeries(rh_may, "RH May")
+createTimeSeries(rh_jun, "RH June")
+createTimeSeries(rh_jul, "RH July")
+createTimeSeries(rh_aug, "RH August")
+createTimeSeries(rh_sep, "RH September")
+createTimeSeries(rh_oct, "RH October")
+createTimeSeries(rh_nov, "RH November")
+createTimeSeries(rh_dec, "RH December")
+
+
 ```
 
 # DD

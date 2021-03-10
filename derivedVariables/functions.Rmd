@@ -1,5 +1,11 @@
-## Mock min and max temp list for testing
-```{r}
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+## Climate Variables 
+
+```{r include=FALSE}
 # Plotting Libraries
 library(ggplot2)
 library(viridis)
@@ -9,7 +15,7 @@ library(plotly)
 ```
 
 
-## Helpers
+## Helper Functions
 ```{r}
 ## TODO: Memoize
 reduce_func <- function (ensamble, region, month, varibale, scenario, model, func) {
@@ -48,16 +54,17 @@ aggregate_accross_months <- function (ensamble, region, months, varibale, scenar
 }
 #aggregate_accross_months("ensmax", "BC", 1:12, "Tave", "historical", "ACCESS.ESM1.5", max)
 ```
-## PLOT
+## Plotting function
 
 ```{r}
-createTimeSeries <- function (data, y_lab) {
-
+createTimeSeries <- function (data, title="", y_lab="") {
+  theme_update(plot.title = element_text(hjust = 0.5))
   # Most  plot
-  p <- ggplot(data, aes(x=Year, y=Value, group = 1)) +
+  p <- ggplot(data, aes(x=Year, y=Value, group = 1, )) +
     geom_line(color="steelblue") +
     xlab("Year") +
-    ylab(y_lab)
+    ylab(y_lab) +
+    ggtitle(title)
   
 #  +
 #    theme_ipsum() +
@@ -65,12 +72,14 @@ createTimeSeries <- function (data, y_lab) {
   
   p <- ggplotly(p)
   
-  p
+  p 
 }
 ```
-
+<br>
 
 ## NFFD
+
+---
 ```{r}
 # nffd: number of frost free days
 # m: month of the year
@@ -86,11 +95,6 @@ nffd <- function(m, tm) {
   
   return( a/(1 + exp(-(tm - t0)/b)))
 }
-```
-
-
-```{r}
-nffd(2, -3)
 ```
 
 
@@ -117,11 +121,6 @@ compute_nffd <- function (ensamble, region, scenario, model, month) {
 
 ```{r}
 jan_nffd <- compute_nffd("ensmax", "BC","historical", "ACCESS.ESM1.5", 1)
-```
-
-
-```{r}
-jan_nffd <- compute_nffd("ensmax", "BC","historical", "ACCESS.ESM1.5", 1)
 feb_nffd <- compute_nffd("ensmax", "BC","historical", "ACCESS.ESM1.5", 2)
 mar_nffd <- compute_nffd("ensmax", "BC","historical", "ACCESS.ESM1.5", 3)
 apr_nffd <- compute_nffd("ensmax", "BC","historical", "ACCESS.ESM1.5", 4)
@@ -137,18 +136,18 @@ dec_nffd <- compute_nffd("ensmax", "BC","historical", "ACCESS.ESM1.5", 12)
 
 
 ```{r}
-createTimeSeries(jan_nffd, "NFFD Historical Jan")
-createTimeSeries(feb_nffd, "NFFD Historical Feb")
-createTimeSeries(mar_nffd, "NFFD Historical Mar")
-createTimeSeries(apr_nffd, "NFFD Historical Apr")
-createTimeSeries(may_nffd, "NFFD Historical May")
-createTimeSeries(jun_nffd, "NFFD Historical Jun")
-createTimeSeries(jul_nffd, "NFFD Historical Jul")
-createTimeSeries(aug_nffd, "NFFD Historical Aug")
-createTimeSeries(sep_nffd, "NFFD Historical Sep")
-createTimeSeries(oct_nffd, "NFFD Historical Oct")
-createTimeSeries(nov_nffd, "NFFD Historical Nov")
-createTimeSeries(dec_nffd, "NFFD Historical Dec")
+createTimeSeries(jan_nffd, "NFFD Historical Jan", "Days")
+createTimeSeries(feb_nffd, "NFFD Historical Feb", "Days")
+createTimeSeries(mar_nffd, "NFFD Historical Mar", "Days")
+createTimeSeries(apr_nffd, "NFFD Historical Apr", "Days")
+createTimeSeries(may_nffd, "NFFD Historical May", "Days")
+createTimeSeries(jun_nffd, "NFFD Historical Jun", "Days")
+createTimeSeries(jul_nffd, "NFFD Historical Jul", "Days")
+createTimeSeries(aug_nffd, "NFFD Historical Aug", "Days")
+createTimeSeries(sep_nffd, "NFFD Historical Sep", "Days")
+createTimeSeries(oct_nffd, "NFFD Historical Oct", "Days")
+createTimeSeries(nov_nffd, "NFFD Historical Nov", "Days")
+createTimeSeries(dec_nffd, "NFFD Historical Dec", "Days")
 ```
 
 
@@ -193,15 +192,16 @@ nffd_autum <- period_nffd("ensmax", "BC", "historical", "ACCESS.ESM1.5", autumn_
 ```
 
 ```{r}
-createTimeSeries(nffd_winter, "NFFD Historical Winter")
-createTimeSeries(nffd_spring, "NFFD Historical Spring")
-createTimeSeries(nffd_summer, "NFFD Historical Summer")
-createTimeSeries(nffd_autum, "NFFD Historical Autum")
+createTimeSeries(nffd_winter, "NFFD Historical Winter", "Days")
+createTimeSeries(nffd_spring, "NFFD Historical Spring", "Days")
+createTimeSeries(nffd_summer, "NFFD Historical Summer", "Days")
+createTimeSeries(nffd_autum, "NFFD Historical Autum", "Days")
 ```
-
-
+<br>
 
 ## FFP, bFFP and eFFP
+
+---
 
 ```{r}
 # td: difference between the mean warmest monthly temperature and the mean coldest monthly temperature
@@ -265,21 +265,25 @@ ffp <-function(effp,bffp) {
 ```{r}
 td_year <- td("ensmax", "BC", "historical", "ACCESS.ESM1.5")
 nffd_year <- period_nffd("ensmax", "BC", "historical", "ACCESS.ESM1.5", 1:12)
-bffp_year <- bffp("ensmax", "BC", "historical", "ACCESS.ESM1.5", year_td, nffd_year)
+bffp_year <- bffp("ensmax", "BC", "historical", "ACCESS.ESM1.5", td_year, nffd_year)
 effp_year <- effp("ensmax", "BC", "historical", "ACCESS.ESM1.5", nffd_year)
 ffp_year <- ffp(effp_year, bffp_year)
 ```
 
 ```{r}
-createTimeSeries(td_year, "Temp Diff")
-createTimeSeries(nffd_year, "NFFD Yearly")
-createTimeSeries(bffp_year, "BFFP Yearly")
-createTimeSeries(effp_year, "EFFP Yearly")
-createTimeSeries(ffp_year, "FFP Yearly")
+createTimeSeries(td_year, "Temp Diff", "Temperature")
+createTimeSeries(nffd_year, "NFFD Yearly","Days")
+createTimeSeries(bffp_year, "BFFP Yearly", "Day of Year")
+createTimeSeries(effp_year, "EFFP Yearly", "Day of Year")
+createTimeSeries(ffp_year, "FFP Yearly", "Days")
 
 ```
 
+<br>
+
 ## PAS
+
+---
 
 ```{r}
 # pas: precipitation as snow
@@ -334,23 +338,27 @@ pas_dec <- compute_pas("ensmax", "BC", "historical", "ACCESS.ESM1.5", 12)
 ```
 
 ```{r}
-createTimeSeries(pas_jan, "Preceip as snow Jan")
-createTimeSeries(pas_feb, "Preceip as snow Feb")
-createTimeSeries(pas_mar, "Preceip as snow Mar")
-createTimeSeries(pas_apr, "Preceip as snow Apr")
-createTimeSeries(pas_may, "Preceip as snow May")
-createTimeSeries(pas_jun, "Preceip as snow Jun")
-createTimeSeries(pas_jul, "Preceip as snow Jul")
-createTimeSeries(pas_aug, "Preceip as snow Aug")
-createTimeSeries(pas_sep, "Preceip as snow Sep")
-createTimeSeries(pas_oct, "Preceip as snow Oct")
-createTimeSeries(pas_nov, "Preceip as snow Nov")
-createTimeSeries(pas_dec, "Preceip as snow Dec")
+createTimeSeries(pas_jan, "Preceip as snow Jan", "Snow Precim ")
+createTimeSeries(pas_feb, "Preceip as snow Feb", "Snow Precim ")
+createTimeSeries(pas_mar, "Preceip as snow Mar", "Snow Precim ")
+createTimeSeries(pas_apr, "Preceip as snow Apr", "Snow Precim ")
+createTimeSeries(pas_may, "Preceip as snow May", "Snow Precim ")
+createTimeSeries(pas_jun, "Preceip as snow Jun", "Snow Precim ")
+createTimeSeries(pas_jul, "Preceip as snow Jul", "Snow Precim ")
+createTimeSeries(pas_aug, "Preceip as snow Aug", "Snow Precim ")
+createTimeSeries(pas_sep, "Preceip as snow Sep", "Snow Precim ")
+createTimeSeries(pas_oct, "Preceip as snow Oct", "Snow Precim ")
+createTimeSeries(pas_nov, "Preceip as snow Nov", "Snow Precim ")
+createTimeSeries(pas_dec, "Preceip as snow Dec", "Snow Precim ")
 
 
 ```
 
+<br>
+
 ## EMT, EXT
+
+---
 
 ```{r}
 # emt: extreme minimum temperature
@@ -377,7 +385,6 @@ ext <- function(ensamble, region, scenario, model, td) {
   tmax8 <- reduce_func(ensamble, region, 12, "Tmax", scenario, model, max) 
 
   tmaxx <- aggregate_accross_months(ensamble, region, 1:12, "Tmax", scenario, model, max)   # tmaxx: maximum max monthly temp over the year
-  print(tmaxx)
 
   ext_value <- 10.64245 -1.92005 * tmax7 + 0.04816 * tmax7^2 + 2.51176 * tmax8 - 0.03088 * tmax8^2 -0.01311 * tmaxx$Value^2 + 0.33167 * td$Value - 0.001 * td$Value^2
   
@@ -394,21 +401,25 @@ ext <- function(ensamble, region, scenario, model, td) {
 td_year <- td("ensmax", "BC", "historical", "ACCESS.ESM1.5")
 emt_test <- emt("ensmax", "BC", "historical", "ACCESS.ESM1.5", td_year)
 
-createTimeSeries(emt_test, "Extreme min temp")
+createTimeSeries(emt_test, "Extreme min temp", "Temperature")
 
 ```
 
-### Test EXT
+### Test EXT (These values don't make sense to me as they are too big)
 ```{r}
 td_year <- td("ensmax", "BC", "historical", "ACCESS.ESM1.5")
 ext_test <- ext("ensmax", "BC", "historical", "ACCESS.ESM1.5", td_year)
 
 
 #View(ext_test)
-createTimeSeries(ext_test, "Extreme max temp")
+createTimeSeries(ext_test, "Extreme max temp", "Temperature")
 ```
 
+<br>
+
 ## RH
+
+---
 
 ```{r}
 # es: saturated vapour pressure at a temperature t
@@ -428,10 +439,6 @@ es <- function(t) {
   
   return(es_value)
 }
-
-# *******************************************
-# Question, should this be tmin or tmin_mean?
-# *******************************************
 
 # rh: relative humidity
 # tmin_mean: monthly mean minimum air temperature
@@ -455,7 +462,7 @@ compute_rh <- function(ensamble, region, month, scenario, model) {
 
 }
 ```
-
+### Test RH 
 ```{r}
 rh_jan <- compute_rh("ensmax", "BC", 1, "historical", "ACCESS.ESM1.5")
 rh_feb <- compute_rh("ensmax", "BC", 2, "historical", "ACCESS.ESM1.5")
@@ -471,25 +478,25 @@ rh_nov <- compute_rh("ensmax", "BC", 11, "historical", "ACCESS.ESM1.5")
 rh_dec <- compute_rh("ensmax", "BC", 12, "historical", "ACCESS.ESM1.5")
 
 
-createTimeSeries(rh_jan, "RH January")
-createTimeSeries(rh_feb, "RH February")
-createTimeSeries(rh_mar, "RH March")
-createTimeSeries(rh_apr, "RH April")
-createTimeSeries(rh_may, "RH May")
-createTimeSeries(rh_jun, "RH June")
-createTimeSeries(rh_jul, "RH July")
-createTimeSeries(rh_aug, "RH August")
-createTimeSeries(rh_sep, "RH September")
-createTimeSeries(rh_oct, "RH October")
-createTimeSeries(rh_nov, "RH November")
-createTimeSeries(rh_dec, "RH December")
+createTimeSeries(rh_jan, "RH January", "Humidity")
+createTimeSeries(rh_feb, "RH February", "Humidity")
+createTimeSeries(rh_mar, "RH March", "Humidity")
+createTimeSeries(rh_apr, "RH April", "Humidity")
+createTimeSeries(rh_may, "RH May", "Humidity")
+createTimeSeries(rh_jun, "RH June", "Humidity")
+createTimeSeries(rh_jul, "RH July", "Humidity")
+createTimeSeries(rh_aug, "RH August", "Humidity")
+createTimeSeries(rh_sep, "RH September", "Humidity")
+createTimeSeries(rh_oct, "RH October", "Humidity")
+createTimeSeries(rh_nov, "RH November", "Humidity")
+createTimeSeries(rh_dec, "RH December", "Humidity")
 
 
 ```
 
 # DD
 
-```{r}
+```{r include=FALSE}
 dd_param_below_0 <- read.csv(file = "../optimizedParameterTables/param_DD_S1.csv", sep=',', header = TRUE)
 dd_param_above_5 <- read.csv(file = "../optimizedParameterTables/param_DD_S2.csv", sep=',', header = TRUE)
 dd_param_below_18 <- read.csv(file = "../optimizedParameterTables/param_DD_S3.csv", sep=',', header = TRUE)
@@ -529,13 +536,4 @@ dd <- function(m, tm) {
 }
 ```
 
-```{r}
-dd(4, 14)
-```
-
-## Test functions
-
-```{r}
-
-```
 

@@ -35,8 +35,9 @@ compute_seasonal <- function(cvar_name, cvar_monthly_df, func) {
   element_summer <- apply(cvar_monthly_df[paste(cvar_name, c("06","07","08"), sep="")], 1, func)
   element_autum <- apply(cvar_monthly_df[paste(cvar_name, c("09","10","11"), sep="")], 1, func)
   
-  # Include annual NFFD
-  element_annual <- colSums(t(cvar_monthly_df))
+  # Include annual cvar 
+  element_annual <- apply(t(cvar_monthly_df), 2, func)
+  
   cvar_monthly_df[cvar_name] <- element_annual
   
   cvar_seasonal_df <- data.frame(element_annual, element_winter, elemnet_spring, element_summer, element_autum)
@@ -116,6 +117,54 @@ pas <- function(t_min_monthly, ppt_monthly) {
   
 } 
 
+# emt: extreme minimum temperature
+# td: difference between the mean warmest monthly temperature and the mean coldest monthly temperature
+emt <- function(td, t_min_monthly, t_min_01, t_min_12) {
+  
+  tminx <- apply(t_min_monthly, 2, min) # tminx: minimum min monthly temp over the year
+  
+  emt_value <- -23.02164 + 0.77908 * t_min_01 + 0.67048 * t_min_12 + 0.01075 * tminx^2 + 0.11565 * td
+
+  return(emt_value)
+}
+
+# ext: extreme maximum temperature
+# t_max_list: named list of monthly maximum temperature for each month
+# td: difference between the mean warmest monthly temperature and the mean coldest monthly temperature
+ext <- function(td, t_max_monthly, t_max_07, t_max_08) {
+  
+  tmaxx <- apply(t_max_monthly, 2, max)  # tmaxx: maximum max monthly temp over the year
+  
+  ext_value <- 10.64245 -1.92005 * t_max_07 + 0.04816 * t_max_07^2 + 2.51176 * t_max_08 - 0.03088 * t_max_08^2 -0.01311 * tmaxx^2 + 0.33167 * td - 0.001 * td^2
+  
+  return(ext_value)
+}
+
+# es: saturated vapour pressure at a temperature t
+# t: air temperature
+es <- function(t) {
+
+  svp <- function(t) {
+    return(0.6105 * exp((17.273*t)/(t+237.3)))
+  }
+  
+  es_value <- apply(t, 2, function(temp) ifelse(temp < 0 , svp(temp)*(1 + (temp*0.01)) ,svp(temp)))
+  
+  return(es_value)
+}
+
+# rh: relative humidity
+# tmin_mean: monthly mean minimum air temperature
+# tmax_mean: monthly mean maximum air temperature
+rh <- function(t_min_monthly, t_max_monthly) {
+  es_avg = (es(t_min_monthly)+ es(t_max_monthly))/2
+  rh_monthly <- (100 * es(t_min_monthly)/es_avg)
+  rownames(rh_monthly) <- paste("RH", monthcodes, sep="")
+  
+  return(rh_monthly)
+}
+
+
 # ==========================================
 #step 2d: create mean observational time series for province/ecoregion
 
@@ -166,7 +215,9 @@ for(ecoprov in ecoprovs){
   
   # NFFD
   nffd_df <- compute_nffd(t_min_monthly)
+  View(nffd_df)
   nffd_seasonal_df <- compute_seasonal("NFFD", nffd_df,  sum) 
+  View(nffd_seasonal_df)
   gridded_data <- cbind(gridded_data, nffd_seasonal_df)
   
 
@@ -185,7 +236,20 @@ for(ecoprov in ecoprovs){
   pas_seasonal_df <- compute_seasonal("PAS", pas_df, sum)
   gridded_data <- cbind(gridded_data, pas_seasonal_df)
     
-
+  # EMT, EXT
+  extreme_min_temp <- emt(temp_diff, t_min_monthly, t_min_monthly["Tmin01",] ,t_min_monthly["Tmin12",]) 
+  extreme_max_temp <- ext(temp_diff, t_min_monthly, t_min_monthly["Tmin07",] ,t_min_monthly["Tmin08",]) 
+  
+  gridded_data$EMT <- extreme_min_temp
+  gridded_data$EXT <- extreme_max_temp
+  
+  # RH
+  rh_monthly <- rh(t_min_monthly, t_max_monthly)
+  rh_monthly_df <- data.frame(t(rh_monthly))
+  rh_seasonal_df <- compute_seasonal("RH",rh_monthly_df, mean)
+  
+  gridded_data <- cbind(gridded_data, rh_seasonal_df)
+  
   ##########################
   # Aggregate all years together
   ##########################

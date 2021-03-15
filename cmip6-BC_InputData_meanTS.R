@@ -168,14 +168,106 @@ rh <- function(t_min_monthly, t_max_monthly) {
 # ==========================================
 #step 2d: create mean observational time series for province/ecoregion
 
-obs.ts <- read.csv("./outputs/obs.ts.csv")
+# obs.ts <- read.csv("./outputs/obs.ts.csv")
+# 
+# ## station observations
+# ecoprov=ecoprovs[2]
+# for(ecoprov in ecoprovs){
+#   if(ecoprov=="BC") s <- 1:dim(obs.ts)[1] else {
+#     for(i in 1:length(unique(obs.ts$Year))){ if(i==1) s <- which(dem.pts$id2==ecoprov) else s <- c(s,which(dem.pts$id2==ecoprov)+length(dem.pts$id2)*(i-1))  }
+#   }
+#   
+#   # Filter for ecoprov
+#   gridded_data <- obs.ts[s,]
+#   
+#   ##########################
+#   # Define base variables (Tmin, Tmax, Tave) for each month
+#   ##########################
+#   
+#   # Years
+#   years <- gridded_data$Year # Might not need this
+#   
+#   # Tmin
+#   t_max_monthly <- t(as.matrix(gridded_data[,2:13]))
+#   
+#   # Tmax
+#   t_min_monthly <- t(as.matrix(gridded_data[,14:25]))
+#   
+#   # PPT
+#   ppt_monthly <- t(as.matrix(gridded_data[,26:37]))
+#   
+#   ##########################
+#   # Derived Climate Variables 
+#   ##########################
+#   
+#   # PPT Seasonal
+#   ppt_df <- data.frame(t(ppt_monthly))
+#   ppt_seasonal <- compute_seasonal("PPT",ppt_df ,  sum) 
+#   gridded_data <- cbind(gridded_data, ppt_seasonal)
+#   
+#   # Tave
+#   t_ave_monthly <- (t_min_monthly+t_max_monthly)/2 
+#   rownames(t_ave_monthly) <- paste("Tave", monthcodes, sep="")
+#   t_ave_df <- data.frame(t(t_ave_monthly))
+#   t_ave_seasonal_df <- compute_seasonal("Tave", t_ave_df, mean)
+#   
+#   gridded_data <- cbind(gridded_data, t_ave_seasonal_df)
+#   
+#   
+#   # NFFD
+#   nffd_monthly_df <- compute_nffd(t_min_monthly)
+#   nffd_seasonal_df <- compute_seasonal("NFFD", nffd_monthly_df,  sum) 
+#   gridded_data <- cbind(gridded_data, nffd_seasonal_df)
+#   
+# 
+#   ## FFP, bFFP and eFFP
+#   temp_diff <- td(t_ave_monthly)
+#   begin_frost_free <- bffp(t_min_monthly["Tmin04",], t_min_monthly["Tmin06",], temp_diff, nffd_seasonal_df$NFFD) 
+#   end_frost_free <- effp(t_min_monthly["Tmin09",], t_min_monthly["Tmin10",], t_min_monthly["Tmin11",], nffd_seasonal_df$NFFD) 
+#   frost_free_period <- ffp(end_frost_free, begin_frost_free)
+#   
+#   gridded_data$FFP <- frost_free_period
+#   
+#   # PAS
+#   pas_monthly <- pas(t_min_monthly, ppt_monthly)
+# 
+#   pas_df <- data.frame(t(pas_monthly))
+#   pas_seasonal_df <- compute_seasonal("PAS", pas_df, sum)
+#   gridded_data <- cbind(gridded_data, pas_seasonal_df)
+#     
+#   # EMT, EXT
+#   extreme_min_temp <- emt(temp_diff, t_min_monthly, t_min_monthly["Tmin01",] ,t_min_monthly["Tmin12",]) 
+#   extreme_max_temp <- ext(temp_diff, t_min_monthly, t_min_monthly["Tmin07",] ,t_min_monthly["Tmin08",]) 
+#   
+#   gridded_data$EMT <- extreme_min_temp
+#   gridded_data$EXT <- extreme_max_temp
+#   
+#   # RH
+#   rh_monthly <- rh(t_min_monthly, t_max_monthly)
+#   rh_monthly_df <- data.frame(t(rh_monthly))
+#   rh_seasonal_df <- compute_seasonal("RH",rh_monthly_df, mean)
+#   
+#   gridded_data <- cbind(gridded_data, rh_seasonal_df)
+#   
+#   ##########################
+#   # Aggregate all years together
+#   ##########################
+#   ts <- aggregate(gridded_data, by=list(gridded_data$Year), FUN = mean, na.rm=T)[,-1] 
+#   
+#   write.csv(ts,paste("./gridded_output/ts.obs.mean.", ecoprov, ".csv", sep=""), row.names=FALSE)
+#   print(ecoprov)
+# }
 
-## station observations
+
+## ERA5
+era5.ts <- read.csv("./outputs/era5.ts.csv")
+
 ecoprov=ecoprovs[2]
 for(ecoprov in ecoprovs){
-  if(ecoprov=="BC") s <- 1:dim(obs.ts)[1] else {
-    for(i in 1:length(unique(obs.ts$Year))){ if(i==1) s <- which(dem.pts$id2==ecoprov) else s <- c(s,which(dem.pts$id2==ecoprov)+length(dem.pts$id2)*(i-1))  }
+  if(ecoprov=="BC") s <- 1:dim(era5.ts)[1] else {
+    for(i in 1:length(unique(era5.ts$Year))){ if(i==1) s <- which(dem.pts$id2==ecoprov) else s <- c(s,which(dem.pts$id2==ecoprov)+length(dem.pts$id2)*(i-1))  }
   }
+
   
   # Filter for ecoprov
   gridded_data <- obs.ts[s,]
@@ -201,7 +293,8 @@ for(ecoprov in ecoprovs){
   ##########################
   
   # PPT Seasonal
-  ppt_seasonal <- compute_seasonal("PPT", data.frame(t(ppt_monthly)),  sum) 
+  ppt_df <- data.frame(t(ppt_monthly))
+  ppt_seasonal <- compute_seasonal("PPT",ppt_df ,  sum) 
   gridded_data <- cbind(gridded_data, ppt_seasonal)
   
   # Tave
@@ -214,13 +307,11 @@ for(ecoprov in ecoprovs){
   
   
   # NFFD
-  nffd_df <- compute_nffd(t_min_monthly)
-  View(nffd_df)
-  nffd_seasonal_df <- compute_seasonal("NFFD", nffd_df,  sum) 
-  View(nffd_seasonal_df)
+  nffd_monthly_df <- compute_nffd(t_min_monthly)
+  nffd_seasonal_df <- compute_seasonal("NFFD", nffd_monthly_df,  sum) 
   gridded_data <- cbind(gridded_data, nffd_seasonal_df)
   
-
+  
   ## FFP, bFFP and eFFP
   temp_diff <- td(t_ave_monthly)
   begin_frost_free <- bffp(t_min_monthly["Tmin04",], t_min_monthly["Tmin06",], temp_diff, nffd_seasonal_df$NFFD) 
@@ -231,11 +322,11 @@ for(ecoprov in ecoprovs){
   
   # PAS
   pas_monthly <- pas(t_min_monthly, ppt_monthly)
-
+  
   pas_df <- data.frame(t(pas_monthly))
   pas_seasonal_df <- compute_seasonal("PAS", pas_df, sum)
   gridded_data <- cbind(gridded_data, pas_seasonal_df)
-    
+  
   # EMT, EXT
   extreme_min_temp <- emt(temp_diff, t_min_monthly, t_min_monthly["Tmin01",] ,t_min_monthly["Tmin12",]) 
   extreme_max_temp <- ext(temp_diff, t_min_monthly, t_min_monthly["Tmin07",] ,t_min_monthly["Tmin08",]) 
@@ -253,49 +344,13 @@ for(ecoprov in ecoprovs){
   ##########################
   # Aggregate all years together
   ##########################
-  ts <- aggregate(gridded_data, by=list(gridded_data$Year), FUN = mean, na.rm=T) # Why remove fist col for year ??
-  
-  write.csv(ts,paste("./gridded_output/ts.obs.mean.", ecoprov, ".csv", sep=""), row.names=FALSE)
+  ts <- aggregate(gridded_data, by=list(gridded_data$Year), FUN = mean, na.rm=T)[,-1] 
+  write.csv(ts,paste("./gridded_output/ts.era5.mean.", ecoprov, ".csv", sep=""), row.names=FALSE)
   print(ecoprov)
-  
-
-  
 }
 
-# 
-# ## ERA5 
-# 
-# era5.ts <- read.csv("outputs\\era5.ts.csv")
-# 
-# ecoprov=ecoprovs[2]
-# for(ecoprov in ecoprovs){
-#   if(ecoprov=="BC") s <- 1:dim(era5.ts)[1] else {
-#     for(i in 1:length(unique(era5.ts$Year))){ if(i==1) s <- which(dem.pts$id2==ecoprov) else s <- c(s,which(dem.pts$id2==ecoprov)+length(dem.pts$id2)*(i-1))  }
-#   }
-#   ts <- aggregate(era5.ts[s,], by=list(era5.ts$Year[s]), FUN = mean, na.rm=T)[,-1]
-#   ts <- cbind(ts, (ts[,2:13]+ts[,14:25])/2)
-#   names(ts) <- c(names(ts)[1:37], paste("Tave", monthcodes, sep=""))
-#   
-#   element <- elements[1]
-#   for(element in elements){
-#     m <- seasons[1]
-#     for(m in seasons){
-#       seasonmonths <- seasonmonth.mat[which(seasons==m),]
-#       temp1 <- ts[,which(names(ts)==paste(element,seasonmonths[1], sep=""))]
-#       temp2 <- ts[,which(names(ts)==paste(element,seasonmonths[2], sep=""))]
-#       temp3 <- ts[,which(names(ts)==paste(element,seasonmonths[3], sep=""))]
-#       if(m=="wt") temp1[2:length(temp1)] <- temp1[1:(length(temp1)-1)] #advance december by one year (doesn't account for first year in series, but not a big deal)
-#       temp <- apply(cbind(temp1, temp2, temp3), 1, if(element=="PPT") "sum" else "mean")
-#       ts <- cbind(ts, temp)
-#     }
-#   }
-#   names(ts) <- c(names(ts)[1:49], paste(rep(elements, each=length(seasons)), rep(seasons, times=length(elements)), sep="_"))
-#   write.csv(ts,paste("C:\\Users\\CMAHONY\\OneDrive - Government of BC\\Projects\\2020_CMIP6Eval\\cmip6-BC\\data\\ts.era5.mean.", ecoprov, ".csv", sep=""), row.names=FALSE)
-#   print(ecoprov)
-# }
-# 
-# 
-# 
+
+
 # 
 # # ==========================================
 # # step 3: GCM Files
@@ -308,37 +363,41 @@ for(ecoprov in ecoprovs){
 # i=1
 # for(i in 1:length(gcms)){
 #   gcm <- gcms[i]
-#   
+# 
 # 
 #   # ==========================================
 #   # step 3b: calculate average time series across BC/ecoprovince for each gcm and scenario
-#   
+# 
 #   files <- list.files("outputs/")
-#   files <- files[grep(paste("ts", gcm, sep="."), files)] #these ts (time series) files have one record for each grid cell for each year. 
+#   files <- files[grep(paste("ts", gcm, sep="."), files)] #these ts (time series) files have one record for each grid cell for each year.
 #   run.list <- sapply(strsplit(files, "[.]"), "[", 3)
 #   scenario.list <- sapply(strsplit(run.list, "_"), "[", 1)
 #   ripf.list <- sapply(strsplit(run.list, "_"), "[", 2)
 #   scenarios <- unique(scenario.list)
-#   
+# 
 #   scenario <- scenarios[1]
 #   for(scenario in scenarios){
 #     ripfs <- unique(ripf.list[which(scenario.list==scenario)])
 #     ripf <- ripfs[2]
 #     for(ripf in ripfs){
 #       data.full <- read.csv(paste("outputs\\ts.", gcm, ".", scenario, "_", ripf, ".csv", sep=""))
+#       
 #       ecoprov <- ecoprovs[1]
 #       for(ecoprov in ecoprovs){
 #         if(ecoprov=="BC") s <- 1:dim(data.full)[1] else {
 #           for(k in 1:length(unique(data.full$Year))){ if(k==1) s <- which(dem.pts$id2==ecoprov) else s <- c(s,which(dem.pts$id2==ecoprov)+length(dem.pts$id2)*(k-1))  }
 #         }
+#         
 #         data <- data.full[s,]
 #         Year <- data$Year
 #         x <- unique(data$Year)
 #         data <- cbind(data, (data[,2:13]+data[,14:25])/2)
 #         names(data) <- c(names(data)[1:37], paste("Tave", monthcodes, sep=""))
+# 
+#         
 #         
 #         ts <- aggregate(data, by=list(Year), FUN = mean, na.rm=T)[,-1]
-#         
+# 
 #         element <- elements[1]
 #         for(element in elements){
 #           m <- seasons[1]
@@ -354,7 +413,7 @@ for(ecoprov in ecoprovs){
 #         }
 #         names(ts) <- c(names(ts)[1:49], paste(rep(elements, each=length(seasons)), rep(seasons, times=length(elements)), sep="_"))
 #         variables <- names(ts)[-1]
-#         
+# 
 #         assign(paste("ts.mean",ecoprov, ripf, sep="."), round(ts,1))
 #         # print(ecoprov)
 #       }
@@ -378,7 +437,7 @@ for(ecoprov in ecoprovs){
 #     }
 #     print(scenario)
 #   }
-#   
+# 
 #   print(gcm)
 # }
 # 

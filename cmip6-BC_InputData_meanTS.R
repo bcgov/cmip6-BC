@@ -217,7 +217,6 @@ for(ecoprov in ecoprovs){
   gridded_data <- cbind(gridded_data, t_ave_seasonal_df)
   
 
-
   # NFFD
   nffd_monthly_df <- compute_nffd(t_min_monthly)
   nffd_seasonal_df <- compute_seasonal("NFFD", nffd_monthly_df,  sum)
@@ -307,6 +306,7 @@ for(ecoprov in ecoprovs){
   t_ave_df <- data.frame(t(t_ave_monthly))
   t_ave_seasonal_df <- compute_seasonal("Tave", t_ave_df, mean)
 
+  gridded_data <- cbind(gridded_data,t_ave_df) # Add monthly Tave
   gridded_data <- cbind(gridded_data, t_ave_seasonal_df)
 
 

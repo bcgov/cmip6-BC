@@ -380,7 +380,7 @@ for(i in 1:length(gcms)){
 
   scenario <- scenarios[1]
   for(scenario in scenarios){
-    ripfs <- unique(ripf.list[which(scenario.list==scenario)])[2:3] # Shortened for testing
+    ripfs <- unique(ripf.list[which(scenario.list==scenario)])
     ripf <- ripfs
     for(ripf in ripfs){
       data.full <- read.csv(paste("./outputs/ts.", gcm, ".", scenario, "_", ripf, ".csv", sep=""))
@@ -505,8 +505,7 @@ for(i in 1:length(gcms)){
 # min, max, and mean for each model and for whole ensemble
 # ==========================================
 
-temp <- read.csv(paste("./outputs/ts.obs.mean.BC.csv", sep=""))
-#variables <- names(temp)[-1]
+variables <-names(read.csv("./gridded_output/ts.era5.mean.SIM.csv"))[-1] 
 print(variables)
 
 files <- list.files("./gridded_output/", pattern=paste("^ensemble.*", sep="."))
@@ -535,7 +534,7 @@ for(fun in funs){
         }
         temp <- cbind(temp, round(apply(temp[,-1], 1, fun, na.rm=T),1))
         names(temp) <- c("Year", gcms.all, "ensemble")
-        write.csv(temp,paste(paste("outputs/ens", fun, sep=""), ecoprov, variable, scenario, "csv", sep="."), row.names=FALSE)
+        write.csv(temp,paste(paste("./gridded_output/ens", fun, sep=""), ecoprov, variable, scenario, "csv", sep="."), row.names=FALSE)
         print(variable)
       }
       print(ecoprov)

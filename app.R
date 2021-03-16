@@ -32,9 +32,9 @@ modelMetadata <- read.csv("data/ModelList.csv")
 files <- list.files("data/", pattern="^summary.mean")
 ecoprovs <- unique(sapply(strsplit(files, "[.]"), "[", 3))
 ecoprov.names <- c("British Columbia", "Boreal Plains", "Central Interior", "Coast and Mountains", "Georgia Depression", "Northern Boreal Mountains", "Sub-Boreal Interior", "Southern Interior Mountains", "Southern Interior", "Taiga Plains")
-elements <- c("Tave", "Tmax", "Tmin", "PPT", "NFFD")
-element.names <- c("Mean temperature" , "Mean daily maximum temperature (Tmax)", "Mean daily minimum temperature (Tmin)", "Precipitation", "Number of frost-free days")
-element.names.units <- c(bquote(Mean~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(maximum)~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(minimum)~temperature~"("*degree*C*")"), "Precipitation (mm)", "Number of frost free days (Days)")
+elements <- c("Tave", "Tmax", "Tmin", "PPT", "NFFD", "FFP", "PAS", "EMT", "EXT", "RH")
+element.names <- c("Mean temperature" , "Mean daily maximum temperature (Tmax)", "Mean daily minimum temperature (Tmin)", "Precipitation", "Number of frost-free days", "Frost-free period", "Precipitation as snow", "Extreme minimum temperature", "Extreme maximum temperature", "Relative Humidity")
+element.names.units <- c(bquote(Mean~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(maximum)~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(minimum)~temperature~"("*degree*C*")"), "Precipitation (mm)", "Number of frost free days (Days)", "Frost-free period (Days)", "Precipitation as snow (mm)", "Extreme minimum temperature (°C)", "Extreme maximum temperature (°C)", "Relative Humidity")
 variable.names <- read.csv("data/Variables_ClimateBC.csv")
 
 funs <- c("bias", "sd")
@@ -56,8 +56,8 @@ seasonmonth.mat <- matrix(monthcodes[c(12, 1:11)],4, byrow=T)
 seasons <- c("wt", "sp", "sm", "at")
 season.names <- c("Winter", "Spring", "Summer", "Autumn")
 
-yeartimes <- c(seasons, monthcodes)
-yeartime.names <- c(season.names, month.name)
+yeartimes <- c("",seasons, monthcodes)
+yeartime.names <- c("Annual",season.names, month.name)
 
 ensstats <- c("ensmin", "ensmax", "ensmean")
 

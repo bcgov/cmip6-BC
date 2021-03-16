@@ -36,6 +36,10 @@ elements <- c("Tave", "Tmax", "Tmin", "PPT", "NFFD", "FFP", "PAS", "EMT", "EXT",
 element.names <- c("Mean temperature" , "Mean daily maximum temperature (Tmax)", "Mean daily minimum temperature (Tmin)", "Precipitation", "Number of frost-free days", "Frost-free period", "Precipitation as snow", "Extreme minimum temperature", "Extreme maximum temperature", "Relative Humidity")
 element.names.units <- c(bquote(Mean~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(maximum)~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(minimum)~temperature~"("*degree*C*")"), "Precipitation (mm)", "Number of frost free days (Days)", "Frost-free period (Days)", "Precipitation as snow (mm)", "Extreme minimum temperature (°C)", "Extreme maximum temperature (°C)", "Relative Humidity")
 variable.names <- read.csv("data/Variables_ClimateBC.csv")
+annualElements <- c("Frost-free period", "Extreme minimum temperature", "Extreme maximum temperature")
+seasonalElements <- c("Number of frost-free days", "Precipitation as snow", "Relative Humidity")
+monthlyElements <- c("Mean temperature" , "Mean daily maximum temperature (Tmax)", "Mean daily minimum temperature (Tmin)", "Precipitation")
+
 
 funs <- c("bias", "sd")
 fun.names <- c("Bias in", "Standard deviation of")
@@ -296,6 +300,33 @@ ui <- fluidPage(
 
 # Define server logic ----
 server <- function(input, output, session) {
+
+  print("INPUT ############")
+  #print(input$element1)
+
+  observe({
+    part_choices <- c("Annual",season.names, month.name)
+
+    if (input$element1 %in% seasonalElements) {
+      part_choices <- c("Annual",season.names)
+    } else if(input$element1 %in% annualElements) {
+      part_choices <- c("Annual")
+    }
+
+    updateSelectInput(session, "yeartime1", choices=part_choices)
+  })
+
+  observe({
+    part_choices <- c("Annual",season.names, month.name)
+
+    if (input$element2 %in% seasonalElements) {
+      part_choices <- c("Annual",season.names)
+    } else if(input$element2 %in% annualElements) {
+      part_choices <- c("Annual")
+    }
+
+    updateSelectInput(session, "yeartime2", choices=part_choices)
+  })
 
   getPlotData <- function() {
 

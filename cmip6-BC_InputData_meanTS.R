@@ -213,7 +213,9 @@ for(ecoprov in ecoprovs){
   t_ave_df <- data.frame(t(t_ave_monthly))
   t_ave_seasonal_df <- compute_seasonal("Tave", t_ave_df, mean)
 
+  gridded_data <- cbind(gridded_data,t_ave_df) # Add monthly Tave
   gridded_data <- cbind(gridded_data, t_ave_seasonal_df)
+  
 
 
   # NFFD

@@ -32,9 +32,9 @@ modelMetadata <- read.csv("data/ModelList.csv")
 files <- list.files("data/", pattern="^summary.mean")
 ecoprovs <- unique(sapply(strsplit(files, "[.]"), "[", 3))
 ecoprov.names <- c("British Columbia", "Boreal Plains", "Central Interior", "Coast and Mountains", "Georgia Depression", "Northern Boreal Mountains", "Sub-Boreal Interior", "Southern Interior Mountains", "Southern Interior", "Taiga Plains")
-elements <- c("Tave", "Tmax", "Tmin", "PPT")
-element.names <- c("Mean temperature" , "Mean daily maximum temperature (Tmax)", "Mean daily minimum temperature (Tmin)", "Precipitation")
-element.names.units <- c(bquote(Mean~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(maximum)~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(minimum)~temperature~"("*degree*C*")"), "Precipitation (mm)")
+elements <- c("Tave", "Tmax", "Tmin", "PPT", "NFFD")
+element.names <- c("Mean temperature" , "Mean daily maximum temperature (Tmax)", "Mean daily minimum temperature (Tmin)", "Precipitation", "Number of frost-free days")
+element.names.units <- c(bquote(Mean~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(maximum)~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(minimum)~temperature~"("*degree*C*")"), "Precipitation (mm)", "Number of frost free days (Days)")
 variable.names <- read.csv("data/Variables_ClimateBC.csv")
 
 funs <- c("bias", "sd")
@@ -306,6 +306,7 @@ server <- function(input, output, session) {
   timeSeriesPlot <- function() {
     # user specificationS
     ecoprov <- ecoprovs[which(ecoprov.names==input$ecoprov.name)]
+
     yeartime1 <- yeartimes[which(yeartime.names==input$yeartime1)]
     yeartime2 <- if(input$compare==T) yeartimes[which(yeartime.names==input$yeartime2)] else yeartimes[which(yeartime.names==input$yeartime1)]
     element1 <- elements[which(element.names==input$element1)]
@@ -594,7 +595,6 @@ server <- function(input, output, session) {
     filename =  "Data.csv",
     
     content = function(file) {
-      print(getPlotData())
       write.csv(getPlotData(), file)
     } 
   )

@@ -134,6 +134,9 @@ ui <- fluidPage(
                                       choices = as.list(ecoprov.names),
                                       selected = ecoprov.names[1]),
                           
+                          downloadButton(outputId = "downloadPlot", label = "Download plot"),
+                          downloadButton(outputId = "downloadData", label = "Download data"),
+
                           img(src = "Ecoprovinces_Title.png", height = round(1861*1/5), width = round(1993*1/5))
                         ),
                         
@@ -292,10 +295,15 @@ ui <- fluidPage(
 )
 
 # Define server logic ----
-server <- function(input, output) {
+server <- function(input, output, session) {
+
+  getPlotData <- function() {
+
+    # TODO: Need to return actual plot data
+    return(data.frame(A=1:10, B=2:11)) # Mock Data
+  }
   
-  output$timeSeries <- renderPlot({
-    
+  timeSeriesPlot <- function() {
     # user specificationS
     ecoprov <- ecoprovs[which(ecoprov.names==input$ecoprov.name)]
     yeartime1 <- yeartimes[which(yeartime.names==input$yeartime1)]
@@ -480,10 +488,13 @@ server <- function(input, output) {
       print(num)
     }
     box()
-  },
+  }
+
+  output$timeSeries <- renderPlot({ timeSeriesPlot() },
   height=reactive(ifelse(!is.null(input$innerWidth),input$innerWidth*0.5,0))
   )
   
+
   output$scatterPlot <- renderPlot({
     
     # ecoprov <- ecoprovs[1]
@@ -561,6 +572,31 @@ server <- function(input, output) {
     
   },
   height=reactive(ifelse(!is.null(input$innerWidth),input$innerWidth*0.4,0))
+  )
+
+  output$downloadPlot <- downloadHandler(
+    filename =  "Plot.png",
+    
+    content = function(file) {
+
+      pixelratio <- session$clientData$pixelratio
+      width  <- session$clientData$output_timeSeries_width
+      height <- session$clientData$output_timeSeries_height
+  
+      png(file, width = width*pixelratio, height = height*pixelratio, res = 72*pixelratio)
+      timeSeriesPlot()
+      dev.off()
+    } 
+  )
+
+
+  output$downloadData <- downloadHandler(
+    filename =  "Data.csv",
+    
+    content = function(file) {
+      print(getPlotData())
+      write.csv(getPlotData(), file)
+    } 
   )
   
   output$table <- DT::renderDataTable({

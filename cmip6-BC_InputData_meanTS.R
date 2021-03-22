@@ -33,7 +33,7 @@ compute_seasonal <- function(cvar_name, cvar_monthly_df, func) {
   element_winter[2:length(element_winter)] <- element_winter[1:(length(element_winter)-1)] #advance december by one year (doesn't account for first year in series, but not a big deal)
   element_winter <- apply(element_winter, 1, func)
 
-  elemnet_spring <- apply(cvar_monthly_df[paste(cvar_name, c("03","04","05"), sep="")],  1, func)
+  element_spring <- apply(cvar_monthly_df[paste(cvar_name, c("03","04","05"), sep="")],  1, func)
   element_summer <- apply(cvar_monthly_df[paste(cvar_name, c("06","07","08"), sep="")], 1, func)
   element_autum <- apply(cvar_monthly_df[paste(cvar_name, c("09","10","11"), sep="")], 1, func)
 
@@ -42,7 +42,7 @@ compute_seasonal <- function(cvar_name, cvar_monthly_df, func) {
 
   cvar_monthly_df[cvar_name] <- element_annual
 
-  cvar_seasonal_df <- data.frame(element_annual, element_winter, elemnet_spring, element_summer, element_autum)
+  cvar_seasonal_df <- data.frame(element_annual, element_winter, element_spring, element_summer, element_autum)
   names(cvar_seasonal_df) <- c(cvar_name, paste(cvar_name, seasons, sep="_"))
 
   return(cvar_seasonal_df)

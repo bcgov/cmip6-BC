@@ -49,12 +49,12 @@ compute_seasonal <- function(cvar_name, cvar_monthly_df, func) {
 }
 
 # Climate Variable Functions (source these)
-
+ 
 # DD_0, degree days below 0
 
 dd_0 <- function(tm) {
   
-  optimized_params <- read.csv(file = "../optimizationTables/param_DD_S1.csv", sep=',', header = TRUE)
+  optimized_params <- read.csv(file = "./optimizedParameterTables/param_DD_S1.csv", sep=',', header = TRUE)
 
   #optimized_params <- dd_param[dd_param$Month == m,]
   #dd_param <- dd_param_above_5[dd_param_above_5$Region == "All"]
@@ -78,7 +78,7 @@ dd_0 <- function(tm) {
 
 dd5 <- function(tm) {
   
-  optimized_params <- read.csv(file = "../optimizationTables/param_DD_S2.csv", sep=',', header = TRUE)
+  optimized_params <- read.csv(file = "./optimizedParameterTables/param_DD_S2.csv", sep=',', header = TRUE)
   optimized_params <- dd_param_above_5[dd_param_above_5$Region == "All"]
 
     
@@ -100,7 +100,7 @@ dd5 <- function(tm) {
 
 dd_18 <- function(tm) {
   
-  optimized_params <- read.csv(file = "../optimizationTables/param_DD_S3.csv", sep=',', header = TRUE)
+  optimized_params <- read.csv(file = "./optimizedParameterTables/param_DD_S3.csv", sep=',', header = TRUE)
     
   k <- optimized_params$k
   a <- optimized_params$a
@@ -119,7 +119,7 @@ dd_18 <- function(tm) {
 
 dd18 <- function(tm) {
   
-  optimized_params <- read.csv(file = "../optimizationTables/param_DD_S4.csv", sep=',', header = TRUE)
+  optimized_params <- read.csv(file = "./optimizedParameterTables/param_DD_S4.csv", sep=',', header = TRUE)
   optimized_params <- dd_param_above_5[dd_param_above_5$Region == "All"]
 
     

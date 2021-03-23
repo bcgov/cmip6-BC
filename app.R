@@ -32,9 +32,9 @@ modelMetadata <- read.csv("data/ModelList.csv")
 files <- list.files("data/", pattern="^summary.mean")
 ecoprovs <- unique(sapply(strsplit(files, "[.]"), "[", 3))
 ecoprov.names <- c("British Columbia", "Boreal Plains", "Central Interior", "Coast and Mountains", "Georgia Depression", "Northern Boreal Mountains", "Sub-Boreal Interior", "Southern Interior Mountains", "Southern Interior", "Taiga Plains")
-elements <- c("Tave", "Tmax", "Tmin", "PPT", "NFFD", "FFP", "PAS", "EMT", "EXT", "RH", "DD_0", "DD5", "DD_18", "DD18")
-element.names <- c("Mean temperature" , "Mean daily maximum temperature (Tmax)", "Mean daily minimum temperature (Tmin)", "Precipitation", "Number of frost-free days", "Frost-free period", "Precipitation as snow", "Extreme minimum temperature", "Extreme maximum temperature", "Relative Humidity", "Degree Days below 0", "Degree Days above 5", "Degree Days below 18", "Degree Days above 18")
-element.names.units <- c(bquote(Mean~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(maximum)~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(minimum)~temperature~"("*degree*C*")"), "Precipitation (mm)", "Number of frost free days (Days)", "Frost-free period (Days)", "Precipitation as snow (mm)", "Extreme minimum temperature (°C)", "Extreme maximum temperature (°C)", "Relative Humidity (%)", "Degree Days below 0", "Degree Days above 5", "Degree Days below 18", "Degree Days above 18")
+elements <- c("Tave", "Tmax", "Tmin", "PPT", "NFFD", "FFP", "PAS", "EMT", "EXT", "RH", "DD_0", "DD5", "DD_18", "DD18", "TD")
+element.names <- c("Mean temperature" , "Mean daily maximum temperature (Tmax)", "Mean daily minimum temperature (Tmin)", "Precipitation", "Number of frost-free days", "Frost-free period", "Precipitation as snow", "Extreme minimum temperature", "Extreme maximum temperature", "Relative Humidity", "Degree Days below 0", "Degree Days above 5", "Degree Days below 18", "Degree Days above 18", "Temperature Difference")
+element.names.units <- c(bquote(Mean~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(maximum)~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(minimum)~temperature~"("*degree*C*")"), "Precipitation (mm)", "Number of frost free days (Days)", "Frost-free period (Days)", "Precipitation as snow (mm)", "Extreme minimum temperature (°C)", "Extreme maximum temperature (°C)", "Relative Humidity (%)", "Degree Days below 0", "Degree Days above 5", "Degree Days below 18", "Degree Days above 18", "Temperature Difference (°C)")
 variable.names <- read.csv("data/Variables_ClimateBC.csv")
 annualElements <- c("Frost-free period", "Extreme minimum temperature", "Extreme maximum temperature")
 seasonalElements <- c("Number of frost-free days", "Precipitation as snow", "Relative Humidity")
@@ -139,7 +139,9 @@ ui <- fluidPage(
                                       selected = ecoprov.names[1]),
                           
                           downloadButton(outputId = "downloadPlot", label = "Download plot"),
-                          downloadButton(outputId = "downloadData", label = "Download data"),
+                          
+                          # ~~~ Download csv data button
+                          # downloadButton(outputId = "downloadData", label = "Download data"),
 
                           img(src = "Ecoprovinces_Title.png", height = round(1861*1/5), width = round(1993*1/5))
                         ),
@@ -327,12 +329,14 @@ server <- function(input, output, session) {
 
     updateSelectInput(session, "yeartime2", choices=part_choices)
   })
-
-  getPlotData <- function() {
-
-    # TODO: Need to return actual plot data
-    return(data.frame(A=1:10, B=2:11)) # Mock Data
-  }
+  
+  # ~~~ Function to return plot data, using mock data currently 
+  
+  # getPlotData <- function() {
+  # 
+  #   # TODO: Need to return actual plot data
+  #   return(data.frame(A=1:10, B=2:11)) # Mock Data
+  # }
   
   timeSeriesPlot <- function() {
     # user specificationS
@@ -621,14 +625,16 @@ server <- function(input, output, session) {
     } 
   )
 
+  
+  # ~~~ Download csv data handler
 
-  output$downloadData <- downloadHandler(
-    filename =  "Data.csv",
-    
-    content = function(file) {
-      write.csv(getPlotData(), file)
-    } 
-  )
+  # output$downloadData <- downloadHandler(
+  #   filename =  "Data.csv",
+  #   
+  #   content = function(file) {
+  #     write.csv(getPlotData(), file)
+  #   } 
+  # )
   
   output$table <- DT::renderDataTable({
     DT::datatable(modelMetadata, 

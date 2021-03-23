@@ -32,10 +32,14 @@ modelMetadata <- read.csv("data/ModelList.csv")
 files <- list.files("data/", pattern="^summary.mean")
 ecoprovs <- unique(sapply(strsplit(files, "[.]"), "[", 3))
 ecoprov.names <- c("British Columbia", "Boreal Plains", "Central Interior", "Coast and Mountains", "Georgia Depression", "Northern Boreal Mountains", "Sub-Boreal Interior", "Southern Interior Mountains", "Southern Interior", "Taiga Plains")
-elements <- c("Tave", "Tmax", "Tmin", "PPT")
-element.names <- c("Mean temperature" , "Mean daily maximum temperature (Tmax)", "Mean daily minimum temperature (Tmin)", "Precipitation")
-element.names.units <- c(bquote(Mean~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(maximum)~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(minimum)~temperature~"("*degree*C*")"), "Precipitation (mm)")
+elements <- c("Tave", "Tmax", "Tmin", "PPT", "NFFD", "FFP", "PAS", "EMT", "EXT", "RH", "DD_0", "DD5", "DD_18", "DD18", "TD")
+element.names <- c("Mean temperature" , "Mean daily maximum temperature (Tmax)", "Mean daily minimum temperature (Tmin)", "Precipitation", "Number of frost-free days", "Frost-free period", "Precipitation as snow", "Extreme minimum temperature", "Extreme maximum temperature", "Relative Humidity", "Degree Days below 0", "Degree Days above 5", "Degree Days below 18", "Degree Days above 18", "Temperature Difference")
+element.names.units <- c(bquote(Mean~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(maximum)~temperature~"("*degree*C*")"),bquote(Mean~daily~bold(minimum)~temperature~"("*degree*C*")"), "Precipitation (mm)", "Number of frost free days (Days)", "Frost-free period (Days)", "Precipitation as snow (mm)", "Extreme minimum temperature (°C)", "Extreme maximum temperature (°C)", "Relative Humidity (%)", "Degree Days below 0", "Degree Days above 5", "Degree Days below 18", "Degree Days above 18", "Temperature Difference (°C)")
 variable.names <- read.csv("data/Variables_ClimateBC.csv")
+annualElements <- c("Frost-free period", "Extreme minimum temperature", "Extreme maximum temperature")
+seasonalElements <- c("Number of frost-free days", "Precipitation as snow", "Relative Humidity")
+monthlyElements <- c("Mean temperature" , "Mean daily maximum temperature (Tmax)", "Mean daily minimum temperature (Tmin)", "Precipitation")
+
 
 funs <- c("bias", "sd")
 fun.names <- c("Bias in", "Standard deviation of")
@@ -56,8 +60,8 @@ seasonmonth.mat <- matrix(monthcodes[c(12, 1:11)],4, byrow=T)
 seasons <- c("wt", "sp", "sm", "at")
 season.names <- c("Winter", "Spring", "Summer", "Autumn")
 
-yeartimes <- c(seasons, monthcodes)
-yeartime.names <- c(season.names, month.name)
+yeartimes <- c("",seasons, monthcodes)
+yeartime.names <- c("Annual",season.names, month.name)
 
 ensstats <- c("ensmin", "ensmax", "ensmean")
 
@@ -134,6 +138,11 @@ ui <- fluidPage(
                                       choices = as.list(ecoprov.names),
                                       selected = ecoprov.names[1]),
                           
+                          downloadButton(outputId = "downloadPlot", label = "Download plot"),
+                          
+                          # ~~~ Download csv data button
+                          # downloadButton(outputId = "downloadData", label = "Download data"),
+
                           img(src = "Ecoprovinces_Title.png", height = round(1861*1/5), width = round(1993*1/5))
                         ),
                         
@@ -292,12 +301,47 @@ ui <- fluidPage(
 )
 
 # Define server logic ----
-server <- function(input, output) {
+server <- function(input, output, session) {
+
+  print("INPUT ############")
+  #print(input$element1)
+
+  observe({
+    part_choices <- c("Annual",season.names, month.name)
+
+    if (input$element1 %in% seasonalElements) {
+      part_choices <- c("Annual",season.names)
+    } else if(input$element1 %in% annualElements) {
+      part_choices <- c("Annual")
+    }
+
+    updateSelectInput(session, "yeartime1", choices=part_choices)
+  })
+
+  observe({
+    part_choices <- c("Annual",season.names, month.name)
+
+    if (input$element2 %in% seasonalElements) {
+      part_choices <- c("Annual",season.names)
+    } else if(input$element2 %in% annualElements) {
+      part_choices <- c("Annual")
+    }
+
+    updateSelectInput(session, "yeartime2", choices=part_choices)
+  })
   
-  output$timeSeries <- renderPlot({
-    
+  # ~~~ Function to return plot data, using mock data currently 
+  
+  # getPlotData <- function() {
+  # 
+  #   # TODO: Need to return actual plot data
+  #   return(data.frame(A=1:10, B=2:11)) # Mock Data
+  # }
+  
+  timeSeriesPlot <- function() {
     # user specificationS
     ecoprov <- ecoprovs[which(ecoprov.names==input$ecoprov.name)]
+
     yeartime1 <- yeartimes[which(yeartime.names==input$yeartime1)]
     yeartime2 <- if(input$compare==T) yeartimes[which(yeartime.names==input$yeartime2)] else yeartimes[which(yeartime.names==input$yeartime1)]
     element1 <- elements[which(element.names==input$element1)]
@@ -480,10 +524,13 @@ server <- function(input, output) {
       print(num)
     }
     box()
-  },
+  }
+
+  output$timeSeries <- renderPlot({ timeSeriesPlot() },
   height=reactive(ifelse(!is.null(input$innerWidth),input$innerWidth*0.5,0))
   )
   
+
   output$scatterPlot <- renderPlot({
     
     # ecoprov <- ecoprovs[1]
@@ -562,6 +609,32 @@ server <- function(input, output) {
   },
   height=reactive(ifelse(!is.null(input$innerWidth),input$innerWidth*0.4,0))
   )
+
+  output$downloadPlot <- downloadHandler(
+    filename =  "Plot.png",
+    
+    content = function(file) {
+
+      pixelratio <- session$clientData$pixelratio
+      width  <- session$clientData$output_timeSeries_width
+      height <- session$clientData$output_timeSeries_height
+  
+      png(file, width = width*pixelratio, height = height*pixelratio, res = 72*pixelratio)
+      timeSeriesPlot()
+      dev.off()
+    } 
+  )
+
+  
+  # ~~~ Download csv data handler
+
+  # output$downloadData <- downloadHandler(
+  #   filename =  "Data.csv",
+  #   
+  #   content = function(file) {
+  #     write.csv(getPlotData(), file)
+  #   } 
+  # )
   
   output$table <- DT::renderDataTable({
     DT::datatable(modelMetadata, 

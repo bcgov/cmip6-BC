@@ -163,6 +163,11 @@ PPT09,September precipitation,September,Monthly,Log
 PPT10,October precipitation,October,Monthly,Log
 PPT11,November precipitation,November,Monthly,Log
 PPT12,December precipitation,December,Monthly,Log
+RH,Relative Humidity,Annual,Annual,Raw
+RH_at,Autumn relative humidity,Autumn,Seasonal,Raw
+RH_sm,Summer relative humidity,Summer,Seasonal,Raw
+RH_sp,Spring relative humidity,Spring,Seasonal,Raw
+RH_wt,Winter relative humidity,Winter,Seasonal,Raw
 SHM,Summer heat:moisture index ((MWMT)/(MSP/1000)),Annual,Annual,Log
 Tave,Mean temperature (deg. C),Any,Any,Raw
 Tave_at,Autumn mean temperature (deg. C),Autumn,Seasonal,Raw

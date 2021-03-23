@@ -67,8 +67,10 @@ dd_0 <- function(tm) {
   c <- optimized_params$c
   beta <- optimized_params$beta
 
-  dd <- apply(tm, 2, function(temp) ifelse(temp > k , a/(1 + exp(-(tm - t0)/b)) , c + (beta * tm)))
+  dd <- apply(tm, 2, function(temp) ifelse(temp > k , a/(1 + exp(-(temp - t0)/b)) , c + (beta * temp)))
   dd[is.na(dd)] <- 0
+  rownames(dd) <- paste("DD_0", monthcodes, sep="")
+  
   
   return(dd)
 
@@ -79,9 +81,8 @@ dd_0 <- function(tm) {
 dd5 <- function(tm) {
   
   optimized_params <- read.csv(file = "./optimizedParameterTables/param_DD_S2.csv", sep=',', header = TRUE)
-  optimized_params <- dd_param_above_5[dd_param_above_5$Region == "All"]
+  optimized_params <- optimized_params[optimized_params$Region == "All",]
 
-    
   k <- optimized_params$k
   a <- optimized_params$a
   b <- optimized_params$b
@@ -89,7 +90,9 @@ dd5 <- function(tm) {
   c <- optimized_params$c
   beta <- optimized_params$beta
 
-  dd <- apply(tm, 2, function(temp) ifelse(temp > k , a/(1 + exp(-(tm - t0)/b)) , c + (beta * tm)))
+  dd <- apply(tm, 2, function(temp) ifelse(temp > k , a/(1 + exp(-(temp - t0)/b)) , c + (beta * temp)))
+  rownames(dd) <- paste("DD5", monthcodes, sep="")
+  
   
   return(dd)
 
@@ -109,7 +112,8 @@ dd_18 <- function(tm) {
   c <- optimized_params$c
   beta <- optimized_params$beta
 
-  dd <- apply(tm, 2, function(temp) ifelse(temp > k , a/(1 + exp(-(tm - t0)/b)) , c + (beta * tm)))
+  dd <- apply(tm, 2, function(temp) ifelse(temp > k , a/(1 + exp(-(temp - t0)/b)) , c + (beta * temp)))
+  rownames(dd) <- paste("DD_18", monthcodes, sep="")
   
   return(dd)
 
@@ -120,7 +124,7 @@ dd_18 <- function(tm) {
 dd18 <- function(tm) {
   
   optimized_params <- read.csv(file = "./optimizedParameterTables/param_DD_S4.csv", sep=',', header = TRUE)
-  optimized_params <- dd_param_above_5[dd_param_above_5$Region == "All"]
+  optimized_params <- optimized_params[optimized_params$Region == "All",]
 
     
   k <- optimized_params$k
@@ -130,7 +134,8 @@ dd18 <- function(tm) {
   c <- optimized_params$c
   beta <- optimized_params$beta
 
-  dd <- apply(tm, 2, function(temp) ifelse(temp > k , a/(1 + exp(-(tm - t0)/b)) , c + (beta * tm)))
+  dd <- apply(tm, 2, function(temp) ifelse(temp > k , a/(1 + exp(-(temp - t0)/b)) , c + (beta * temp)))
+  rownames(dd) <- paste("DD18", monthcodes, sep="")
   
   return(dd)
 
@@ -154,7 +159,7 @@ compute_nffd <- function(t_min) {
 
 # td: difference between the mean warmest monthly temperature and the mean coldest monthly temperature
 td <- function(t_ave) {
-
+  
   warmest_temp_of_year <- apply(t_ave, 2, max)
   coldest_temp__of_year <- apply(t_ave, 2, min)
 
@@ -342,15 +347,16 @@ for(ecoprov in ecoprovs){
 
   dd_0_monthly <- dd_0(t_min_monthly)
   dd_0_monthly_df <- data.frame(t(dd_0_monthly))
-  dd_0_seasonal_df <- compute_seasonal("RH", dd_0_monthly_df, mean)
+  
+  dd_0_seasonal_df <- compute_seasonal("DD_0", dd_0_monthly_df, mean)
 
   gridded_data <- cbind(gridded_data, dd_0_seasonal_df)
 
-  # DD_5
+  # DD5
 
   dd5_monthly <- dd5(t_min_monthly)
   dd5_monthly_df <- data.frame(t(dd5_monthly))
-  dd5_seasonal_df <- compute_seasonal("RH", dd5_monthly_df, mean)
+  dd5_seasonal_df <- compute_seasonal("DD5", dd5_monthly_df, mean)
 
   gridded_data <- cbind(gridded_data, dd5_seasonal_df)
 
@@ -358,7 +364,7 @@ for(ecoprov in ecoprovs){
 
   dd_18_monthly <- dd_18(t_min_monthly)
   dd_18_monthly_df <- data.frame(t(dd_18_monthly))
-  dd_18_seasonal_df <- compute_seasonal("RH", dd_18_monthly_df, mean)
+  dd_18_seasonal_df <- compute_seasonal("DD_18", dd_18_monthly_df, mean)
 
   gridded_data <- cbind(gridded_data, dd_18_seasonal_df)
 
@@ -366,14 +372,14 @@ for(ecoprov in ecoprovs){
 
   dd18_monthly <- dd18(t_min_monthly)
   dd18_monthly_df <- data.frame(t(dd18_monthly))
-  dd18_seasonal_df <- compute_seasonal("RH", dd18_monthly_df, mean)
+  dd18_seasonal_df <- compute_seasonal("DD18", dd18_monthly_df, mean)
 
   gridded_data <- cbind(gridded_data, dd18_seasonal_df)
 
   # TD
 
-  td_monthly <- td(t_ave_monthly)
-  gridded_data$TD <- colMeans(td_monthly)
+  td_yearly <- td(t_ave_monthly)
+  gridded_data$TD <- td_yearly
 
   ##########################
   # Aggregate all years together
@@ -469,41 +475,41 @@ for(ecoprov in ecoprovs){
   gridded_data <- cbind(gridded_data, rh_seasonal_df)
 
   # DD_0
-
+  
   dd_0_monthly <- dd_0(t_min_monthly)
   dd_0_monthly_df <- data.frame(t(dd_0_monthly))
-  dd_0_seasonal_df <- compute_seasonal("RH", dd_0_monthly_df, mean)
-
+  dd_0_seasonal_df <- compute_seasonal("DD_0", dd_0_monthly_df, mean)
+  
   gridded_data <- cbind(gridded_data, dd_0_seasonal_df)
-
-  # DD_5
-
+  
+  # DD5
+  
   dd5_monthly <- dd5(t_min_monthly)
   dd5_monthly_df <- data.frame(t(dd5_monthly))
-  dd5_seasonal_df <- compute_seasonal("RH", dd5_monthly_df, mean)
-
+  dd5_seasonal_df <- compute_seasonal("DD5", dd5_monthly_df, mean)
+  
   gridded_data <- cbind(gridded_data, dd5_seasonal_df)
-
+  
   # DD_18
-
+  
   dd_18_monthly <- dd_18(t_min_monthly)
   dd_18_monthly_df <- data.frame(t(dd_18_monthly))
-  dd_18_seasonal_df <- compute_seasonal("RH", dd_18_monthly_df, mean)
-
+  dd_18_seasonal_df <- compute_seasonal("DD_18", dd_18_monthly_df, mean)
+  
   gridded_data <- cbind(gridded_data, dd_18_seasonal_df)
-
+  
   # DD18
-
+  
   dd18_monthly <- dd18(t_min_monthly)
   dd18_monthly_df <- data.frame(t(dd18_monthly))
-  dd18_seasonal_df <- compute_seasonal("RH", dd18_monthly_df, mean)
-
+  dd18_seasonal_df <- compute_seasonal("DD18", dd18_monthly_df, mean)
+  
   gridded_data <- cbind(gridded_data, dd18_seasonal_df)
 
   # TD
-
-  td_monthly <- td(t_ave_monthly)
-  gridded_data$TD <- colMeans(td_monthly)
+  
+  td_yearly <- td(t_ave_monthly)
+  gridded_data$TD <- td_yearly
 
   ##########################
   # Aggregate all years together
@@ -628,41 +634,41 @@ for(i in 1:length(gcms)){
         gridded_data <- cbind(gridded_data, rh_seasonal_df)
 
         # DD_0
-
+        
         dd_0_monthly <- dd_0(t_min_monthly)
         dd_0_monthly_df <- data.frame(t(dd_0_monthly))
-        dd_0_seasonal_df <- compute_seasonal("RH", dd_0_monthly_df, mean)
-
+        dd_0_seasonal_df <- compute_seasonal("DD_0", dd_0_monthly_df, mean)
+        
         gridded_data <- cbind(gridded_data, dd_0_seasonal_df)
-
-        # DD_5
-
+        
+        # DD5
+        
         dd5_monthly <- dd5(t_min_monthly)
         dd5_monthly_df <- data.frame(t(dd5_monthly))
-        dd5_seasonal_df <- compute_seasonal("RH", dd5_monthly_df, mean)
-
+        dd5_seasonal_df <- compute_seasonal("DD5", dd5_monthly_df, mean)
+        
         gridded_data <- cbind(gridded_data, dd5_seasonal_df)
-
+        
         # DD_18
-
+        
         dd_18_monthly <- dd_18(t_min_monthly)
         dd_18_monthly_df <- data.frame(t(dd_18_monthly))
-        dd_18_seasonal_df <- compute_seasonal("RH", dd_18_monthly_df, mean)
-
+        dd_18_seasonal_df <- compute_seasonal("DD_18", dd_18_monthly_df, mean)
+        
         gridded_data <- cbind(gridded_data, dd_18_seasonal_df)
-
+        
         # DD18
-
+        
         dd18_monthly <- dd18(t_min_monthly)
         dd18_monthly_df <- data.frame(t(dd18_monthly))
-        dd18_seasonal_df <- compute_seasonal("RH", dd18_monthly_df, mean)
-
+        dd18_seasonal_df <- compute_seasonal("DD18", dd18_monthly_df, mean)
+        
         gridded_data <- cbind(gridded_data, dd18_seasonal_df)
-
-          # TD
-
-          td_monthly <- td(t_ave_monthly)
-          gridded_data$TD <- colMeans(td_monthly)
+        
+        # TD
+        
+        td_yearly <- td(t_ave_monthly)
+        gridded_data$TD <- td_yearly
 
         ##########################
         # Aggregate all years together

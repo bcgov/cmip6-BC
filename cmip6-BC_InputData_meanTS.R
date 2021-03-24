@@ -306,7 +306,7 @@ for(ecoprov in ecoprovs){
 
   gridded_data <- cbind(gridded_data,t_ave_df) # Add monthly Tave
   gridded_data <- cbind(gridded_data, t_ave_seasonal_df)
-  
+
 
   # NFFD
   nffd_monthly_df <- compute_nffd(t_min_monthly)
@@ -347,7 +347,7 @@ for(ecoprov in ecoprovs){
 
   dd_0_monthly <- dd_0(t_min_monthly)
   dd_0_monthly_df <- data.frame(t(dd_0_monthly))
-  
+
   dd_0_seasonal_df <- compute_seasonal("DD_0", dd_0_monthly_df, mean, sep="_")
 
   gridded_data <- cbind(gridded_data, dd_0_seasonal_df)
@@ -475,39 +475,39 @@ for(ecoprov in ecoprovs){
   gridded_data <- cbind(gridded_data, rh_seasonal_df)
 
   # DD_0
-  
+
   dd_0_monthly <- dd_0(t_min_monthly)
   dd_0_monthly_df <- data.frame(t(dd_0_monthly))
   dd_0_seasonal_df <- compute_seasonal("DD_0", dd_0_monthly_df, mean, sep="_")
-  
+
   gridded_data <- cbind(gridded_data, dd_0_seasonal_df)
-  
+
   # DD5
-  
+
   dd5_monthly <- dd5(t_min_monthly)
   dd5_monthly_df <- data.frame(t(dd5_monthly))
   dd5_seasonal_df <- compute_seasonal("DD5", dd5_monthly_df, mean, sep="_")
-  
+
   gridded_data <- cbind(gridded_data, dd5_seasonal_df)
-  
+
   # DD_18
-  
+
   dd_18_monthly <- dd_18(t_min_monthly)
   dd_18_monthly_df <- data.frame(t(dd_18_monthly))
   dd_18_seasonal_df <- compute_seasonal("DD_18", dd_18_monthly_df, mean, sep="_")
-  
+
   gridded_data <- cbind(gridded_data, dd_18_seasonal_df)
-  
+
   # DD18
-  
+
   dd18_monthly <- dd18(t_min_monthly)
   dd18_monthly_df <- data.frame(t(dd18_monthly))
   dd18_seasonal_df <- compute_seasonal("DD18", dd18_monthly_df, mean, sep="_")
-  
+
   gridded_data <- cbind(gridded_data, dd18_seasonal_df)
 
   # TD
-  
+
   td_yearly <- td(t_ave_monthly)
   gridded_data$TD <- td_yearly
 
@@ -595,6 +595,7 @@ for(i in 1:length(gcms)){
         t_ave_df <- data.frame(t(t_ave_monthly))
         t_ave_seasonal_df <- compute_seasonal("Tave", t_ave_df, mean)
 
+        gridded_data <- cbind(gridded_data,t_ave_df) # Add monthly Tave
         gridded_data <- cbind(gridded_data, t_ave_seasonal_df)
 
 
@@ -634,39 +635,39 @@ for(i in 1:length(gcms)){
         gridded_data <- cbind(gridded_data, rh_seasonal_df)
 
         # DD_0
-        
+
         dd_0_monthly <- dd_0(t_min_monthly)
         dd_0_monthly_df <- data.frame(t(dd_0_monthly))
         dd_0_seasonal_df <- compute_seasonal("DD_0", dd_0_monthly_df, mean, sep="_")
-        
+
         gridded_data <- cbind(gridded_data, dd_0_seasonal_df)
-        
+
         # DD5
-        
+
         dd5_monthly <- dd5(t_min_monthly)
         dd5_monthly_df <- data.frame(t(dd5_monthly))
         dd5_seasonal_df <- compute_seasonal("DD5", dd5_monthly_df, mean, sep="_")
-        
+
         gridded_data <- cbind(gridded_data, dd5_seasonal_df)
-        
+
         # DD_18
-        
+
         dd_18_monthly <- dd_18(t_min_monthly)
         dd_18_monthly_df <- data.frame(t(dd_18_monthly))
         dd_18_seasonal_df <- compute_seasonal("DD_18", dd_18_monthly_df, mean, sep="_")
-        
+
         gridded_data <- cbind(gridded_data, dd_18_seasonal_df)
-        
+
         # DD18
-        
+
         dd18_monthly <- dd18(t_min_monthly)
         dd18_monthly_df <- data.frame(t(dd18_monthly))
         dd18_seasonal_df <- compute_seasonal("DD18", dd18_monthly_df, mean, sep="_")
-        
+
         gridded_data <- cbind(gridded_data, dd18_seasonal_df)
-        
+
         # TD
-        
+
         td_yearly <- td(t_ave_monthly)
         gridded_data$TD <- td_yearly
 
@@ -675,7 +676,7 @@ for(i in 1:length(gcms)){
         ##########################
         ts <- aggregate(gridded_data, by=list(gridded_data$Year), FUN = mean, na.rm=T)[,-1]
 
-        
+
         variables <- names(ts)[-1]
         assign(paste("ts.mean",ecoprov, ripf, sep="."), round(ts,1))
       }
@@ -711,13 +712,13 @@ for(i in 1:length(gcms)){
 # ==========================================
 
 variables <-names(read.csv("./gridded_output/ts.era5.mean.SIM.csv"))[-1] 
-print(variables)
 
 files <- list.files("./gridded_output/", pattern=paste("^ensemble.*", sep="."))
 gcms.all <- unique(sapply(strsplit(files, "[.]"), "[", 2))
 scenarios <- unique(sapply(strsplit(files, "[.]"), "[", 5))
 funs <- c("min", "max", "mean")
 fun <- funs[1]
+
 for(fun in funs){
   scenario <- scenarios[1]
   for(scenario in scenarios){
@@ -725,22 +726,23 @@ for(fun in funs){
     for(ecoprov in ecoprovs){
       variable <- variables[1]
       for(variable in variables){
+
         files <- list.files("./gridded_output/", pattern=paste("^ensemble.*", ecoprov, variable, scenario,"*", sep="."))
         gcms <- unique(sapply(strsplit(files, "[.]"), "[", 2))
         gcm <- gcms[1]
-        data <- read.csv(paste("./gridded_output/ensemble", gcm, ecoprov, variable, scenario, "csv", sep="."))
+        data <- read.csv(paste("./gridded_output/ensemble", gcm, ecoprov, variable, scenario, "csv", sep=".")) ##
         temp <- data.frame(data[,1], matrix(NA, dim(data)[1],length(gcms.all)))
         names(temp) <- c("Year", gcms.all)
         for(gcm in gcms){
           data <- read.csv(paste("./gridded_output/ensemble", gcm, ecoprov, variable, scenario, "csv", sep="."))
           stat <- if(dim(data)[2]==2) data[,2] else round(apply(data[,-1], 1, fun),1)
           temp[match(data$Year, temp$Year),which(names(temp)==gcm)] <- stat
-          # print(gcm)
+          print(gcm)
         }
         temp <- cbind(temp, round(apply(temp[,-1], 1, fun, na.rm=T),1))
         names(temp) <- c("Year", gcms.all, "ensemble")
         write.csv(temp,paste(paste("./gridded_output/ens", fun, sep=""), ecoprov, variable, scenario, "csv", sep="."), row.names=FALSE)
-        print(variable)
+       print(variable)
       }
       print(ecoprov)
     }

@@ -14,13 +14,22 @@ library(colorRamps)
 library(rgeos)
 library(rgdal)
 
+# Configure path based on os type 
+
+path_sep <- "/"
+
+if(.Platform$OS.type != "unix") {
+  path_sep <- "\\"
+}
+
+
 
 monthdays <- c(31, 28.25, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 monthcodes <- c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12")
 seasons <- c("wt", "sp", "sm", "at")
 seasonmonth.mat <- matrix(monthcodes[c(12, 1:11)],4, byrow=T)
 
-dem.pts <- read.csv("./outputs/dem_cmip6eval.csv")
+dem.pts <- read.csv(paste("outputs", "dem_cmip6eval.csv", sep=path_sep))
 ecoprovs <- c("BC", sort(as.character(unique(dem.pts$id2))))
 ecoprov.names <- c("British Columbia", "Boreal Plains", "Central Interior", "Coast and Mountains", "Georgia Depression", "Northern Boreal Mountains", "Sub-Boreal Interior", "Southern Interior Mountains", "Southern Interior", "Taiga Plains")
 # elements <- c("Tave", "Tmax", "Tmin", "PPT", "NFFD")
@@ -54,7 +63,7 @@ compute_seasonal <- function(cvar_name, cvar_monthly_df, func, sep="") {
 
 dd_0 <- function(tm) {
   
-  optimized_params <- read.csv(file = "./optimizedParameterTables/param_DD_S1.csv", sep=',', header = TRUE)
+  optimized_params <- read.csv(file = paste("optimizedParameterTables","param_DD_S1.csv", sep=path_sep), sep=',', header = TRUE)
 
   #optimized_params <- dd_param[dd_param$Month == m,]
   #dd_param <- dd_param_above_5[dd_param_above_5$Region == "All"]
@@ -80,7 +89,7 @@ dd_0 <- function(tm) {
 
 dd5 <- function(tm) {
   
-  optimized_params <- read.csv(file = "./optimizedParameterTables/param_DD_S2.csv", sep=',', header = TRUE)
+  optimized_params <- read.csv(file = paste("optimizedParameterTables", "param_DD_S2.csv", sep=path_sep), sep=',', header = TRUE)
   optimized_params <- optimized_params[optimized_params$Region == "All",]
 
   k <- optimized_params$k
@@ -103,8 +112,8 @@ dd5 <- function(tm) {
 
 dd_18 <- function(tm) {
   
-  optimized_params <- read.csv(file = "./optimizedParameterTables/param_DD_S3.csv", sep=',', header = TRUE)
-    
+  optimized_params <- read.csv(file = paste("optimizedParameterTables", "param_DD_S3.csv", sep=path_sep), sep=',', header = TRUE)
+  
   k <- optimized_params$k
   a <- optimized_params$a
   b <- optimized_params$b
@@ -123,7 +132,7 @@ dd_18 <- function(tm) {
 
 dd18 <- function(tm) {
   
-  optimized_params <- read.csv(file = "./optimizedParameterTables/param_DD_S4.csv", sep=',', header = TRUE)
+  optimized_params <- read.csv(file = paste("optimizedParameterTables", "param_DD_S4.csv", sep=path_sep), sep=',', header = TRUE)
   optimized_params <- optimized_params[optimized_params$Region == "All",]
 
     
@@ -143,8 +152,8 @@ dd18 <- function(tm) {
 
 # NFFD
 compute_nffd <- function(t_min) {
-  nffd_param <- read.csv(file = "./optimizedParameterTables/param_NFFD.csv", sep=',', header = TRUE)
-
+  nffd_param <- read.csv(file = paste("optimizedParameterTables", "param_NFFD.csv", sep=path_sep), sep=',', header = TRUE)
+  
   a <- nffd_param$a
   b <- nffd_param$b
   t0 <- nffd_param$T0
@@ -198,8 +207,8 @@ ffp <-function(effp,bffp) {
 # tm: min temperature for that month
 pas <- function(t_min_monthly, ppt_monthly) {
 
-  pas_param <- read.csv(file = "./optimizedParameterTables/param_PAS.csv", sep=',', header = TRUE)
-
+  pas_param <- read.csv(file = paste("optimizedParameterTables", "param_PAS.csv", sep=path_sep), sep=',', header = TRUE)
+  
   b <- pas_param$b
   t0 <- pas_param$T0
 
@@ -261,7 +270,7 @@ rh <- function(t_min_monthly, t_max_monthly) {
 # ==========================================
 #step 2d: create mean observational time series for province/ecoregion
 
-obs.ts <- read.csv("./outputs/obs.ts.csv")
+obs.ts <- read.csv(paste("outputs","obs.ts.csv", sep=path_sep))
 
 ## station observations
 ecoprov=ecoprovs[2]
@@ -386,13 +395,13 @@ for(ecoprov in ecoprovs){
   ##########################
   ts <- aggregate(gridded_data, by=list(gridded_data$Year), FUN = mean, na.rm=T)[,-1]
 
-  write.csv(ts,paste("./gridded_output/ts.obs.mean.", ecoprov, ".csv", sep=""), row.names=FALSE)
+  write.csv(ts,paste(paste("gridded_output", "ts.obs.mean.", sep=path_sep), ecoprov, ".csv", sep=""), row.names=FALSE)
   print(ecoprov)
 }
 
 
 ## ERA5
-era5.ts <- read.csv("./outputs/era5.ts.csv")
+era5.ts <- read.csv(paste("outputs","era5.ts.csv", sep=path_sep))
 
 ecoprov=ecoprovs[2]
 for(ecoprov in ecoprovs){
@@ -515,7 +524,7 @@ for(ecoprov in ecoprovs){
   # Aggregate all years together
   ##########################
   ts <- aggregate(gridded_data, by=list(gridded_data$Year), FUN = mean, na.rm=T)[,-1]
-  write.csv(ts,paste("./gridded_output/ts.era5.mean.", ecoprov, ".csv", sep=""), row.names=FALSE)
+  write.csv(ts,paste(paste("gridded_output","ts.era5.mean.", sep=path_sep), ecoprov, ".csv", sep=""), row.names=FALSE)
   print(ecoprov)
 }
 
@@ -526,7 +535,7 @@ for(ecoprov in ecoprovs){
 # step 3: GCM Files
 # ==========================================
 
-files <- list.files("outputs/", pattern=paste("^ts.*", sep="."))
+files <- list.files("outputs", pattern=paste("^ts.*", sep="."))
 gcms <- unique(sapply(strsplit(files, "[.]"), "[", 2))
 gcms <- gcms[-grep("obs|era", gcms)]
 
@@ -538,7 +547,7 @@ for(i in 1:length(gcms)){
   # ==========================================
   # step 3b: calculate average time series across BC/ecoprovince for each gcm and scenario
 
-  files <- list.files("outputs/")
+  files <- list.files("outputs")
   files <- files[grep(paste("ts", gcm, sep="."), files)] #these ts (time series) files have one record for each grid cell for each year.
   run.list <- sapply(strsplit(files, "[.]"), "[", 3)
   scenario.list <- sapply(strsplit(run.list, "_"), "[", 1)
@@ -551,7 +560,7 @@ for(i in 1:length(gcms)){
     ripfs <- unique(ripf.list[which(scenario.list==scenario)])
     ripf <- ripfs
     for(ripf in ripfs){
-      data.full <- read.csv(paste("./outputs/ts.", gcm, ".", scenario, "_", ripf, ".csv", sep=""))
+      data.full <- read.csv(paste(paste("outputs","ts.", sep=path_sep), gcm, ".", scenario, "_", ripf, ".csv", sep=""))
       ecoprov <- ecoprovs[1]
       for(ecoprov in ecoprovs){
         if(ecoprov=="BC") s <- 1:dim(data.full)[1] else {
@@ -694,7 +703,7 @@ for(i in 1:length(gcms)){
         }
         names(ensemble) <- ripfs
         ensemble <- data.frame(Year=x, ensemble)
-        write.csv(ensemble,paste("./gridded_output/ensemble", gcm, ecoprov, variable, scenario, "csv", sep="."), row.names=FALSE)
+        write.csv(ensemble, paste(paste("gridded_output","ensemble", sep=path_sep), gcm, ecoprov, variable, scenario, "csv", sep="."), row.names=FALSE)
         # print(variable)
       }
       # print(ecoprov)
@@ -711,9 +720,9 @@ for(i in 1:length(gcms)){
 # min, max, and mean for each model and for whole ensemble
 # ==========================================
 
-variables <-names(read.csv("./gridded_output/ts.era5.mean.SIM.csv"))[-1] 
+variables <-names(read.csv(paste("gridded_output", "ts.era5.mean.SIM.csv", sep=path_sep)))[-1] # changed to file with all variables
 
-files <- list.files("./gridded_output/", pattern=paste("^ensemble.*", sep="."))
+files <- list.files(paste("gridded_output", path_sep, sep="") , pattern=paste("^ensemble.*", sep="."))
 gcms.all <- unique(sapply(strsplit(files, "[.]"), "[", 2))
 scenarios <- unique(sapply(strsplit(files, "[.]"), "[", 5))
 funs <- c("min", "max", "mean")
@@ -727,21 +736,21 @@ for(fun in funs){
       variable <- variables[1]
       for(variable in variables){
 
-        files <- list.files("./gridded_output/", pattern=paste("^ensemble.*", ecoprov, variable, scenario,"*", sep="."))
+        files <- list.files(paste("gridded_output", path_sep, sep=""), pattern=paste("^ensemble.*", ecoprov, variable, scenario,"*", sep="."))
         gcms <- unique(sapply(strsplit(files, "[.]"), "[", 2))
         gcm <- gcms[1]
-        data <- read.csv(paste("./gridded_output/ensemble", gcm, ecoprov, variable, scenario, "csv", sep=".")) ##
+        data <- read.csv(paste(paste("gridded_output", "ensemble", sep=path_sep), gcm, ecoprov, variable, scenario, "csv", sep=".")) 
         temp <- data.frame(data[,1], matrix(NA, dim(data)[1],length(gcms.all)))
         names(temp) <- c("Year", gcms.all)
         for(gcm in gcms){
-          data <- read.csv(paste("./gridded_output/ensemble", gcm, ecoprov, variable, scenario, "csv", sep="."))
+          data <- read.csv(paste(paste("gridded_output", "ensemble", sep=path_sep), gcm, ecoprov, variable, scenario, "csv", sep=".")) ##
           stat <- if(dim(data)[2]==2) data[,2] else round(apply(data[,-1], 1, fun),1)
           temp[match(data$Year, temp$Year),which(names(temp)==gcm)] <- stat
           print(gcm)
         }
         temp <- cbind(temp, round(apply(temp[,-1], 1, fun, na.rm=T),1))
         names(temp) <- c("Year", gcms.all, "ensemble")
-        write.csv(temp,paste(paste("./gridded_output/ens", fun, sep=""), ecoprov, variable, scenario, "csv", sep="."), row.names=FALSE)
+        write.csv(temp,paste(paste(paste("gridded_output","ens", sep=path_sep), fun, sep=""), ecoprov, variable, scenario, "csv", sep="."), row.names=FALSE)
        print(variable)
       }
       print(ecoprov)
@@ -752,7 +761,7 @@ for(fun in funs){
 }
 
 ## rbind the scenarios together and write out.
-files <- list.files("./gridded_output/", pattern=paste("^ensemble.*", sep="."))
+files <- list.files(paste("gridded_output", path_sep, sep=""), pattern=paste("^ensemble.*", sep="."))
 scenarios <- unique(sapply(strsplit(files, "[.]"), "[", 5))
 variables <- unique(sapply(strsplit(files, "[.]"), "[", 4))
 ecoprovs <- unique(sapply(strsplit(files, "[.]"), "[", 3))
@@ -761,11 +770,11 @@ for(fun in funs){
   for(ecoprov in ecoprovs){
     for(variable in variables){
       for(scenario in scenarios){
-        temp <- read.csv(paste(paste("./gridded_output/ens", fun, sep=""), ecoprov, variable, scenario, "csv", sep="."))
+        temp <- read.csv(paste(paste(paste("gridded_output","ens", sep=path_sep), fun, sep=""), ecoprov, variable, scenario, "csv", sep="."))
         data <- if(scenario==scenarios[1]) data.frame(scenario=rep(scenario, dim(temp)[1]), temp) else rbind(data, data.frame(scenario=rep(scenario, dim(temp)[1]), temp))
         # print(scenario)
       }
-      write.csv(data,paste(paste("./gridded_output/ens", fun, sep=""), ecoprov, variable, "csv", sep="."), row.names=FALSE)
+      write.csv(data,paste(paste(paste("gridded_output", "ens", sep=path_sep), fun, sep=""), ecoprov, variable, "csv", sep="."), row.names=FALSE)
       # print(variable)
     }
     print(ecoprov)

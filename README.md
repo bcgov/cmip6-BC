@@ -1,6 +1,8 @@
 # cmip6-BC
 An app to compare observations and CMIP6 projections for British Columbia
 
+[![Lifecycle:Dormant](https://img.shields.io/badge/Lifecycle-Dormant-ff7f2a)](<Redirect-URL>)
+
 Copyright 2021 Province of British Columbia
 
 Licensed under the Apache License, Version 2.0 (the "License");
